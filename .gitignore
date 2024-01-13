@@ -1,0 +1,28 @@
+# Виртуальное окружение
+/venv
+
+# Cостояния выполнения юнит-тестов
+.pytest_cache/
+
+# Файлы среды разработки
+.idea/
+__pycache__/
+
+# Файлы обученных моделей.
+/models/**/
+
+# Отчеты по обучению моделей.
+/reports/training/**/
+
+# Резервные копии блакнотов
+/notebooks/.ipynb_checkpoints/
+
+# файлы данных.
+/data/processed/*.csv
+/data/raw/*.csv
+
+# Файлы конрольной точки.
+/data/raw/checkpoints/*.json
+
+# Исходные файлы ресурсов
+/resources/**/*.psd

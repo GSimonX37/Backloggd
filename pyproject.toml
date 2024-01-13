@@ -1,0 +1,25 @@
+[tool.interrogate]
+ignore-module = true
+ignore-init-module = true
+ignore-nested-classes = true
+ignore-init-method = true
+ignore-magic = true
+ignore-private = false
+ignore-semiprivate = false
+ignore-property-decorators = false
+ignore-nested-functions = true
+ignore-setters = false
+fail-under = 95
+verbose = 1
+
+[tool.isort]
+line_length = 80
+multi_line_output = 7
+force_single_line = true
+lines_between_types = 1
+lines_after_imports = 2
+known_first_party = ["app",
+                     "config",
+                     "ml",
+                     "parser",
+                     "utils"]
