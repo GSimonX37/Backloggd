@@ -70,7 +70,7 @@ def preprocessing(file: str) -> None:
     """
 
     name = fr'{FILE_RAW_PATH}\{file}'
-    df = pd.read_csv(name, delimiter=';')
+    df = pd.read_csv(name)
 
     # Удаление явных дубликатов.
     df = df.drop_duplicates()
