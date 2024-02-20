@@ -34,8 +34,9 @@ class ProgressBar:
         h = int(self.time // 60) if self.time else 0
         m = int(self.time % 60) if self.time else 0
         percents = 100 / self.maximum * self.current
+        marks = int(round(percents, 2) / 2)
 
-        return (f'|{chr(0x2588) * int(percents / 2):50}| - {percents:6.2f}% '
+        return (f'|{chr(0x2588) * marks:50}| - {percents:6.2f}% '
                 f'({self.current} из {self.maximum}) - {h:02} час. {m:02} мин.')
 
 
