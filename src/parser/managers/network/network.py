@@ -66,24 +66,38 @@ class NetworkManager:
 
         await self.delay.delay()
 
-        async with self.session.get(link, params=params) as response:
-            code = response.status
+        try:
+            async with self.session.get(link, params=params) as response:
+                code = response.status
 
-            await self.delay.code(code)
+                await self.delay.code(code)
 
-            if code == 200:
-                self.statuses["successful"] += 1
-            else:
-                if code in self.statuses["failed"]:
-                    self.statuses["failed"][code] += 1
+                if code == 200:
+                    self.statuses["successful"] += 1
                 else:
-                    self.statuses["failed"][code] = 1
+                    if code in self.statuses["failed"]:
+                        self.statuses["failed"][code] += 1
+                    else:
+                        self.statuses["failed"][code] = 1
 
-            if code != 404:
-                self.traffic += int(response.headers['Content-Length'])
-                return {'code': code, 'text': await response.text()}
-            else:
-                return {'code': code, 'text': ''}
+                if code != 404:
+                    self.traffic += int(response
+                                        .headers
+                                        .get('Content-Length', 0))
+
+                    return {
+                        'code': code,
+                        'text': await response.text(errors='ignore'),
+                    }
+                else:
+                    return {
+                        'code': code,
+                        'text': ''
+                    }
+        except aiohttp.ClientConnectorError:
+            return {'code': 0, 'text': ''}
+        except aiohttp.ClientOSError:
+            return {'code': 0, 'text': ''}
 
     def page(self, release: str) -> str:
         """
