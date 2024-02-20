@@ -7,7 +7,7 @@ from config.paths import CHECKPOINT_PATH
 from config.paths import FILE_RAW_PATH
 
 
-class FileManager:
+class FileManager(object):
     """
     Файловый менеджер, задачами которого являются:
 

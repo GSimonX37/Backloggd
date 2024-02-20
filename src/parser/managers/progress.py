@@ -1,7 +1,7 @@
 import time
 
 
-class ProgressManager:
+class ProgressManager(object):
     """
     Менеджер прогресса, задачами которого являются:
 

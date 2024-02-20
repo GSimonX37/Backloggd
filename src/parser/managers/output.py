@@ -2,7 +2,7 @@ import asyncio
 import os
 
 
-class ProgressBar:
+class ProgressBar(object):
     """
     Шкала отображения прогресса;
 

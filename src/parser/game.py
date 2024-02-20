@@ -1,7 +1,7 @@
 import datetime
 
 
-class Game:
+class Game(object):
     """
     Видеоигра;
 

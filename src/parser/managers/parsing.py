@@ -6,7 +6,7 @@ from config.parser.managers.parsing import PARSING_FIELDS
 from parser.game import Game
 
 
-class ParsingManager:
+class ParsingManager(object):
     """
     Менеджер парсинга, задачами которого являются:
 

@@ -6,7 +6,7 @@ from config.parser.spider import RELEASES
 from parser.managers.network.delay import DelayManager
 
 
-class NetworkManager:
+class NetworkManager(object):
     """
     Сетевой менеджер, задачами которого являются:
 

@@ -10,7 +10,7 @@ from parser.managers.parsing import ParsingManager
 from parser.managers.progress import ProgressManager
 
 
-class Parser:
+class Parser(object):
     """
     Программа, осуществляющая сбор, обработку и хранение данных;
 

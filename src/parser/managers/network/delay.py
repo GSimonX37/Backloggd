@@ -3,7 +3,7 @@ import asyncio
 from random import uniform
 
 
-class DelayManager:
+class DelayManager(object):
     """
     Менеджер задержки, задачами которого являются:
 
