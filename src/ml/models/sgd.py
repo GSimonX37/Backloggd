@@ -60,13 +60,3 @@ params = {
         num=6
     ).round(5).tolist()
 }
-
-params = {
-    "estimator__estimator__alpha": [0.1],
-    "estimator__estimator__class_weight": ["balanced"],
-    "estimator__estimator__l1_ratio": [0.0],
-    "standardizer__vectorizer__max_features": [1000000],
-    "standardizer__vectorizer__ngram_range": [(1, 3)],
-    'standardizer__vectorizer__sublinear_tf': [True],
-    "standardizer__vectorizer__norm": [None]
-}

@@ -50,13 +50,3 @@ params = {
         num=10
     ).round(5).tolist()
 }
-
-params = {
-    "estimator__estimator__alpha": [2.0],
-    "estimator__estimator__norm": [False],
-    "standardizer__vectorizer__max_features": [500000],
-    "standardizer__vectorizer__ngram_range": [(1, 3)],
-    "standardizer__vectorizer__norm": [None],
-    "standardizer__vectorizer__sublinear_tf": [False]
-}
-
