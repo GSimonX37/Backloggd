@@ -1,6 +1,6 @@
 import os
 
-from config.paths import FILE_RAW_PATH
+from config.paths import PATH_RAW_DATA
 from utils.data.preprocessing import preprocessing
 from utils.explorer import explorer
 
@@ -12,11 +12,11 @@ def main():
     :return: None.
     """
 
-    names = explorer(FILE_RAW_PATH, '*.csv')
+    names = explorer(PATH_RAW_DATA, exclude=('checkpoints', ))
     os.system('cls')
-    print('Список необработанных файлов:', names, sep='\n', flush=True)
+    print('Список необработанных данных:', names, sep='\n', flush=True)
 
-    if data := input('Выберите файл: '):
+    if data := input('Выберите данные: '):
         preprocessing(data)
 
 
