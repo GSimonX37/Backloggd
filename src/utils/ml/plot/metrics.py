@@ -223,5 +223,5 @@ def metrics(y_test: pd.DataFrame,
         figure.savefig(
             fname=path + r'\metrics.png',
             bbox_inches='tight',
-            dpi=500
+            dpi=250
         )

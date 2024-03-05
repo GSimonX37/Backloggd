@@ -163,5 +163,5 @@ def calibration(y_true: pd.DataFrame,
         figure.savefig(
             fname=path + r'\calibration.png',
             bbox_inches='tight',
-            dpi=500
+            dpi=250
         )

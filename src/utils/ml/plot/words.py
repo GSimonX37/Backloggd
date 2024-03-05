@@ -242,5 +242,5 @@ def words(data: pd.DataFrame,
         figure.savefig(
             fname=path + r'\words.png',
             bbox_inches='tight',
-            dpi=500
+            dpi=250
         )

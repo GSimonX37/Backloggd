@@ -300,5 +300,5 @@ def scalability(train_sizes: pd.Series,
         figure.savefig(
             fname=path + r'\scalability.png',
             bbox_inches='tight',
-            dpi=500
+            dpi=250
         )
