@@ -29,7 +29,7 @@ class ProgressManager(object):
         self.interval: int | None = None
         self.time: int | None = None
 
-    def setting(self, progress: dict) -> None:
+    def setting(self, progress: list) -> None:
         """
         Настраивает менеджер;
 
@@ -38,17 +38,7 @@ class ProgressManager(object):
         """
 
         self.progress = progress
-
-        for release, (current, last) in progress.items():
-            if current != last:
-                self.finished[release] = [current - 1, last]
-            else:
-                self.finished[release] = [current, last]
-
-        for (release, (current, last)) in self.finished.items():
-            if current != last:
-                self.release = release
-                break
+        self.finished = [progress[0] - 1, progress[1]]
 
     def starting(self) -> None:
         """
@@ -103,15 +93,8 @@ class ProgressManager(object):
 
         self.timer()
         self.speeder()
-        self.finished[self.release][0] += 1
-
-        if self.progress[self.release][0] != self.progress[self.release][1]:
-            self.progress[self.release][0] += 1
-        else:
-            for (release, (current, last)) in self.progress.items():
-                if current != last:
-                    self.release = release
-                    break
+        self.finished[0] += 1
+        self.progress[0] += 1
 
     def json(self) -> dict:
         """
@@ -120,8 +103,4 @@ class ProgressManager(object):
         :return: Текущие параметры.
         """
 
-        progress = {}
-        for (release, (current, _)) in self.progress.items():
-            progress[release] = current
-
-        return {'progress': progress}
+        return {'progress': self.progress[0]}

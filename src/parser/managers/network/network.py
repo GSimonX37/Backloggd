@@ -2,7 +2,6 @@ import aiohttp
 
 from config.parser.managers.network.network import HEADERS
 from config.parser.managers.network.network import URL
-from config.parser.spider import RELEASES
 from parser.managers.network.delay import DelayManager
 
 
@@ -20,7 +19,6 @@ class NetworkManager(object):
     :var delay: менеджер задержки;
     :var headers: заголовки get-запросов;
     :var traffic: размер входящего трафика;
-    :var releases: названия релизов в адресной строке;
     :var url: адрес сайта web-ресурса;
     :var session: клиентская сессия для отправления запросов;
     :var statuses: статусы отправленных запросов;
@@ -31,7 +29,6 @@ class NetworkManager(object):
 
         self.headers: dict = HEADERS
         self.traffic: int = 0
-        self.releases: dict[str, str] = RELEASES
         self.url: str = URL
         self.session: aiohttp.ClientSession | None = None
         self.statuses: dict = {
@@ -88,6 +85,7 @@ class NetworkManager(object):
                     return {
                         'code': code,
                         'text': await response.text(errors='ignore'),
+                        'binary': await response.read()
                     }
                 else:
                     return {
@@ -95,21 +93,9 @@ class NetworkManager(object):
                         'text': ''
                     }
         except aiohttp.ClientConnectorError:
-            return {'code': 0, 'text': ''}
+            return {'code': 0, 'text': '', 'binary': b''}
         except aiohttp.ClientOSError:
-            return {'code': 0, 'text': ''}
-
-    def page(self, release: str) -> str:
-        """
-        Возвращает адрес страницы по указанному типу релиза;
-
-        :param release: тип релиза;
-        :return: адрес страницы.
-        """
-
-        return (f'{self.url}/games/lib/release:asc/release_year:'
-                f'released;'
-                f'category:{self.releases[release]}')
+            return {'code': 0, 'text': '', 'binary': b''}
 
     def setting(self, span: tuple, factor: int, threshold: int) -> None:
         """

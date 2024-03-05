@@ -1,7 +1,6 @@
 import asyncio
 
-from config.parser.spider import RELEASES
-from config.parser.spider import VALID_ATTEMPTS
+from config.parser.parser import VALID_ATTEMPTS
 from parser.game import Game
 from parser.managers.file import FileManager
 from parser.managers.network.network import NetworkManager
@@ -19,7 +18,6 @@ class Parser(object):
     :var output: менеджер вывода;
     :var parsing: менеджер парсинга;
     :var progress: менеджер прогресса;
-    :var releases: релизы видеоигр;
     :var stopped: флаг остановки трансфера данных.
     """
 
@@ -29,7 +27,6 @@ class Parser(object):
         self.output: OutputManager = OutputManager()
         self.parsing: ParsingManager = ParsingManager()
         self.progress: ProgressManager = ProgressManager()
-        self.releases: dict[str, str] = RELEASES
         self.stopped: bool = False
 
     async def connect(self) -> int:
@@ -71,18 +68,41 @@ class Parser(object):
         :return: None
         """
 
-        for release, (current, last) in self.progress.progress.items():
-            for page in range(current, last + 1):
-                link = self.network.page(release)
-                links = await self.links(link, page)
-                games = await self.games(links, release)
+        current, last = self.progress.progress
 
-                data = [game.csv() for game in games if game]
-                await self.file.write(data)
+        for page in range(current, last + 1):
+            links = await self.links(page)
 
-                await self.progress.next()
+            first = (page - 1) * 36 + 1
+            ids = [10 ** 6 + i for i in range(first, first + len(links))]
 
-                await self.save()
+            games = await self.games(links, ids)
+
+            data = {
+                'games': [],
+                'developers': [],
+                'platforms': [],
+                'genres': [],
+                'scores': []
+            }
+
+            for game in games:
+                csv = game.csv()
+
+                data['games'].append(csv['games'])
+                data['developers'] += csv['developers']
+                data['platforms'] += csv['platforms']
+                data['genres'] += csv['genres']
+                data['scores'] += csv['scores']
+
+            await self.file.write(data)
+
+            images = {game.id: game.image for game in games if game.image}
+            await self.file.images(images)
+
+            await self.progress.next()
+
+            await self.save()
 
         self.file.delete()
 
@@ -92,11 +112,10 @@ class Parser(object):
         self.output.stopped = True
         self.stopped = True
 
-    async def links(self, link: str, page: int) -> list[str]:
+    async def links(self, page: int) -> list[str]:
         """
         Получает ссылки на страницы с данными;
 
-        :param link: страница с играми;
         :param page: номер страницы;
         :return: ссылки на страницы с данными.
         """
@@ -104,6 +123,7 @@ class Parser(object):
         code, links = None, []
 
         while code != 200:
+            link = f'{self.network.url}/games/lib/release:asc/'
             response = await self.network.get(link, params={'page': f'{page}'})
             code = response['code']
 
@@ -113,16 +133,15 @@ class Parser(object):
 
         return links
 
-    async def page(self, link: str) -> None | int:
+    async def page(self) -> None | int:
         """
         Получает номер последней страницы по указанной ссылке;
 
-        :param link: ссылка на страницу с данными;
         :return: номер последней страницы.
         """
 
         code, number, attempts = None, None, 0
-
+        link = f'{self.network.url}/games/lib/release:asc/'
         while code != 200 and attempts < VALID_ATTEMPTS:
             response = await self.network.get(link)
             code, attempts = response['code'], attempts + 1
@@ -133,39 +152,17 @@ class Parser(object):
 
         return number
 
-    async def pages(self, releases: tuple[str]) -> tuple[int]:
-        """
-        Получает номера последних страниц по указанным ссылкам;
-
-        :param releases: релизы видеоигр;
-        :return: последние страницы.
-        """
-
-        tasks = []
-
-        for release in releases:
-            release = self.network.releases[release]
-            link = self.network.url
-            link += (f'/games/lib/release:asc/'
-                     f'release_year:released;'
-                     f'category:{release}')
-            tasks.append(asyncio.create_task(self.page(link)))
-
-        numbers = await asyncio.gather(*tasks)
-
-        return numbers
-
-    async def game(self, link: str, release: str) -> Game:
+    async def game(self, link: str, i: int) -> Game:
         """
         Получает данные о видеоигре по указанной ссылке;
 
         :param link: ссылка на страницу с данными;
-        :param release: тип релиза видеоигры;
+        :param i: id видеоигры;
         :return: данные видеоигры.
         """
 
         code, attempts = None, 0
-        game = Game(release)
+        game = Game(i)
 
         while code != 200:
             if attempts > VALID_ATTEMPTS and code != 429:
@@ -183,7 +180,7 @@ class Parser(object):
                 code, link = None, link.replace('games', 'logs') + 'plays/'
                 while code != 200:
                     if attempts > VALID_ATTEMPTS and code != 429:
-                        return game
+                        break
 
                     response = await self.network.get(link)
                     code = response['code']
@@ -194,20 +191,36 @@ class Parser(object):
                         text = response['text']
                         await self.parsing.statistic(game, text)
 
+                if game.image:
+                    code, attempts = None, 0
+
+                    while code != 200:
+                        if attempts > VALID_ATTEMPTS and code != 429:
+                            game.image = None
+                            return game
+
+                        response = await self.network.get(game.image)
+                        code = response['code']
+
+                        attempts += 1
+
+                        if code == 200:
+                            game.image = response['binary']
+
         return game
 
-    async def games(self, links: list[str], release: str) -> tuple[Game]:
+    async def games(self, links: list[str], ids: list[int]) -> tuple[Game]:
         """
         Получает данные о видеоиграх по указанным ссылкам;
 
         :param links: ссылки на страницы с данными;
-        :param release: тип релиза видеоигр;
+        :param ids: идентификаторы видеоигр;
         :return: данные видеоигр.
         """
 
         tasks = []
-        for link in links:
-            tasks.append(asyncio.create_task(self.game(link, release)))
+        for link, num in zip(links, ids):
+            tasks.append(asyncio.create_task(self.game(link, num)))
 
         games = await asyncio.gather(*tasks)
 
@@ -226,7 +239,7 @@ class Parser(object):
                       span: tuple[int, int],
                       factor: int,
                       threshold: int,
-                      file: str,
+                      directory: str,
                       mode: str,
                       timeout: int,
                       checkpoint: str):
@@ -236,7 +249,7 @@ class Parser(object):
         :param span: диапазон задержки;
         :param factor: масштаб задержки;
         :param threshold: порог смены типа задержки;
-        :param file: имя файла с данными;
+        :param directory: имя директории с данными;
         :param mode: режим работы с файлом;
         :param timeout: задержка между выводами текущего состояния;
         :param checkpoint: имя файла контрольной точки в формате json;
@@ -244,14 +257,11 @@ class Parser(object):
         """
 
         self.network.setting(span, factor, threshold)
-        self.file.setting(file, mode, checkpoint)
+        self.file.setting(directory, mode, checkpoint)
 
-        progress = {}
-        latest = await self.pages((*self.releases.keys(), ))
-        for release, last in zip([*self.releases.keys()], latest):
-            progress[release] = [1, last]
+        last = await self.page()
 
-        self.progress.setting(progress)
+        self.progress.setting([1, last])
         self.output.setting(timeout)
 
         await self.transfer()
@@ -281,7 +291,7 @@ class Parser(object):
         settings = self.file.load(checkpoint)
 
         self.file.setting(
-            file=settings['file'],
+            directory=settings['directory'],
             mode='a',
             checkpoint=checkpoint
         )
@@ -292,15 +302,12 @@ class Parser(object):
             threshold=settings['threshold']
         )
 
-        progress = {}
-        latest = await self.pages((*self.releases.keys(), ))
-        pages = zip(settings['progress'].items(), latest)
-        for (release, current), last in pages:
-            progress[release] = [current, last]
+        last = await self.page()
 
         self.progress.setting(
-            progress=progress
+            progress=[settings['progress'], last]
         )
+
         self.output.setting(
             timeout=settings['timeout']
         )
@@ -325,9 +332,10 @@ class Parser(object):
 
         while not self.stopped:
             await self.output.file(
-                file=self.file.file,
+                directory=self.file.directory,
                 size=self.file.size,
                 records=self.file.records,
+                image=self.file.image
             )
 
             await self.output.network(

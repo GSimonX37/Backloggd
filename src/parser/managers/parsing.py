@@ -33,15 +33,39 @@ class ParsingManager(object):
         soup = BeautifulSoup(text, 'html.parser')
         soup = soup.find('div', class_='row', id='game-profile')
 
+        game.image = await self.image(soup)
         game.name = await self.name(soup)
         game.date = await self.date(soup)
         game.developers = await self.developers(soup)
         game.rating = await self.rating(soup)
-        game.votes = await self.votes(soup)
+        game.scores = await self.scores(soup)
         game.reviews = await self.reviews(soup)
         game.platforms = await self.platforms(soup)
         game.genres = await self.genres(soup)
         game.description = await self.description(soup)
+
+    async def image(self, soup: BeautifulSoup) -> str | None:
+        """
+        Осуществляет парсинг ссылки на изображение;
+
+        :param soup: объект BeautifulSoup;
+        :return: ссылка на изображение.
+        """
+
+        try:
+            html = soup.find('img', class_='card-img height')
+            image = html['src']
+
+            self.success['image'] += 1
+            return image
+        except AttributeError:
+            self.failed['image'] += 1
+        except ValueError:
+            self.failed['image'] += 1
+        except KeyError:
+            self.failed['image'] += 1
+        except TypeError:
+            self.failed['image'] += 1
 
     async def name(self, soup: BeautifulSoup) -> str | None:
         """
@@ -129,7 +153,7 @@ class ParsingManager(object):
         except ValueError:
             self.failed['rating'] += 1
 
-    async def votes(self, soup: BeautifulSoup) -> list[int]:
+    async def scores(self, soup: BeautifulSoup) -> list[int]:
         """
         Осуществляет парсинг количества голосов пользователей;
 
@@ -145,13 +169,13 @@ class ParsingManager(object):
             votes = [vote['data-tippy-content'].split()[0]
                      for vote in votes[::2]]
 
-            self.success['votes'] += 1
+            self.success['scores'] += 1
             return votes
         except AttributeError:
-            self.failed['votes'] += 1
+            self.failed['scores'] += 1
             return []
         except ValueError:
-            self.failed['votes'] += 1
+            self.failed['scores'] += 1
             return []
 
     async def reviews(self, soup: BeautifulSoup) -> int | None:
@@ -163,12 +187,13 @@ class ParsingManager(object):
         """
 
         try:
+
             reviews = soup.find('div', id='center-content')
             reviews = (reviews
-                       .find('div', class_='col-5 col-xl-auto pl-1')
-                       .find('p')
+                       .findAll('p', class_='game-page-sidecard')[-1]
                        .text)
             reviews = reviews.split()[0]
+
             if 'K' in reviews:
                 reviews = int(float(reviews.replace('K', '')) * 1000)
             else:
@@ -181,7 +206,7 @@ class ParsingManager(object):
             self.failed['reviews'] += 1
             return
 
-        if reviews > 5:
+        if reviews > 10:
             try:
                 reviews = soup.find_all('a', class_='small-link')[-1].text
                 reviews = int(reviews.split()[-2])

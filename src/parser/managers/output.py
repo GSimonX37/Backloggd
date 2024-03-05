@@ -50,7 +50,6 @@ class OutputManager:
     :var timeout: задержка между выводами текущего состояния;
     :var states: состояния менеджеров для отображения на экране;
     :var stopped: флаг остановки вывода данных;
-    :var release: прогресс сбора данных текущего релиза;
     :var total: прогресс сбора всех данных.
     """
 
@@ -59,24 +58,30 @@ class OutputManager:
         self.timeout: int | None = None
         self.states: dict = {}
         self.stopped: bool = False
-        self.release: ProgressBar = ProgressBar()
         self.total: ProgressBar = ProgressBar()
 
-    async def file(self, file: str, size: int, records: int) -> None:
+    async def file(self,
+                   directory: str,
+                   size: dict,
+                   records: dict,
+                   image: dict) -> None:
         """
         Получает данные и формирует состояние файлового менеджера;
 
-        :param file: имя файла с данными;
+        :param directory: имя файла с данными;
         :param size: размер файла с данными;
         :param records: количество собранных данных;
+        :param image: размер и количество изображений;
         :return: None
         """
 
-        self.states['file'] = (
-            f'Имя файла: {file:>24}.\n'
-            f'Размер файла: {size / 2 ** 10:18.2f} KB.\n'
-            f'Количество записей: {records:15}.'
-        )
+        self.states['file'] = f'Имя каталога: {directory:>24}.\n'
+        for (file, size), records in zip(size.items(), records.values()):
+            file += '.csv'
+            size /= 2 ** 10
+            self.states['file'] += f'{file:<14} {records:8} {size:11.2f} KB.\n'
+        folder, count, size = 'posters', image['count'], image['size'] / 2 ** 10
+        self.states['file'] += f'{folder:<14} {count:8} {size:11.2f} KB.'
 
     async def network(self, statuses: dict, traffic: int, span: tuple) -> None:
         """
@@ -146,32 +151,15 @@ class OutputManager:
 
         self.passed = passed
 
-        releases = ''
-        for r, (current, maximum) in finish.items():
-            percent = current / maximum
-            releases += f'{r:11} {current:6} из {maximum:6} - {percent:7.2%};\n'
-
-        release = ''
-        for (release, (current, maximum)) in finish.items():
-            if current != maximum:
-                release = release
-                break
-
-        self.release.step(
-            current=finish[release][0],
-            maximum=finish[release][1],
-            speed=speed
-        )
-
-        current = sum([current for (current, maximum) in finish.values()])
-        maximum = sum([maximum for (current, maximum) in finish.values()])
+        current = finish[0]
+        maximum = finish[1]
         percent = current / maximum
-        releases += f'{"Всего":11} {current:6} из {maximum:6} - {percent:7.2%}.'
+        releases = f'{"Всего":11} {current:6} из {maximum:6} - {percent:7.2%}.'
 
         self.total.step(
-            current=current,
-            maximum=maximum,
-            speed=speed
+                current=current,
+                maximum=maximum,
+                speed=speed
         )
 
         speed = speed if speed else 0.0
@@ -181,7 +169,6 @@ class OutputManager:
             f'Скорость обработки: {speed:9.2f} стр./мин.\n'
             f'Время обработки: {interval:12} сек./стр.\n'
             f'{releases}\n\n'
-            f'Релиз: {self.release}\n'
             f'Всего: {self.total}'
         )
 

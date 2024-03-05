@@ -1,18 +1,16 @@
-import datetime
-
-
 class Game(object):
     """
     Видеоигра;
 
+    :var id: идентификатор;
+    :var image: ссылка на постер;
     :var name: название;
     :var date: дата выхода;
     :var genres: игровые жанры;
     :var platforms: игровые платформы;
     :var developers: группа разработчиков;
     :var rating: средний рейтинг;
-    :var votes: количество оценок пользователей;
-    :var release: тип релиза;
+    :var scores: количество оценок пользователей по рейтингам;
     :var reviews: количество отзывов пользователей;
     :var plays: общее количество игроков;
     :var playing: количество игроков в настоящий момент;
@@ -21,15 +19,16 @@ class Game(object):
     :var description: описание.
     """
 
-    def __init__(self, release: str):
+    def __init__(self, num: int):
+        self.id: int | None = num
+        self.image: str | None = None
         self.name: str | None = None
-        self.date: datetime.date | None = None
+        self.date: str | None = None
         self.genres: list | None = None
-        self.platforms: list[str] | list = []
-        self.developers: list[str] | list = []
+        self.platforms: list[str] | None = None
+        self.developers: list[str] | None = None
         self.rating: float | None = None
-        self.votes: list[int] | list = []
-        self.release: str = release
+        self.scores: list[int] | None = None
         self.reviews: int | None = None
         self.plays: int | None = None
         self.playing: int | None = None
@@ -45,26 +44,33 @@ class Game(object):
 
         return False
 
-    def csv(self) -> list:
+    def csv(self) -> dict:
         """
         Возвращает данные для записи в csv-файл.
 
         :return: Данные для записи в csv-файл.
         """
+        scores = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0]
 
-        return [
-            self.name,
-            self.date,
-            self.developers,
-            self.rating,
-            self.votes,
-            self.platforms,
-            self.genres,
-            self.release,
-            self.reviews,
-            self.plays,
-            self.playing,
-            self.backlogs,
-            self.wishlists,
-            self.description
-        ]
+        csv = {
+            'games': [
+                self.id,
+                self.name,
+                self.date,
+                self.rating,
+                self.reviews,
+                self.plays,
+                self.playing,
+                self.backlogs,
+                self.wishlists,
+                self.description
+            ],
+            'developers': [[self.id, genre] for genre in self.developers],
+            'platforms': [[self.id, genre] for genre in self.platforms],
+            'genres': [[self.id, genre] for genre in self.genres],
+            'scores': [[self.id, score, amount]
+                       for score, amount
+                       in zip(scores, self.scores)]
+        }
+
+        return csv

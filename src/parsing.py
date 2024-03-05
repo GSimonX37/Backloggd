@@ -1,9 +1,9 @@
 import asyncio
 import os
 
-from config.parser.spider import SETTINGS
-from config.paths import CHECKPOINT_PATH
-from config.paths import FILE_RAW_PATH
+from config.parser.parser import SETTINGS
+from config.paths import PATH_CHECKPOINT
+from config.paths import PATH_RAW_DATA
 from parser.parser import Parser
 from utils.explorer import explorer
 
@@ -23,31 +23,31 @@ async def main():
     if code := await parser.connect() == 200:
         print('Ок.', flush=True)
 
-        if names := explorer(CHECKPOINT_PATH, '*.json'):
+        if names := explorer(PATH_CHECKPOINT, '*.json'):
             print(flush=True)
             print('Список контрольных точек:', names, sep='\n', flush=True)
             if checkpoint := input('Загрузить контрольную точку: '):
                 await parser.load(checkpoint)
             else:
                 print(flush=True)
-                names = explorer(FILE_RAW_PATH, '*.csv')
-                print('Список файлов:', names, sep='\n', flush=True)
-                data = input('Укажите имя файла: ')
+                names = explorer(PATH_RAW_DATA, exclude=('checkpoints', ))
+                print('Список директорий:', names, sep='\n', flush=True)
+                data = input('Укажите имя директории: ')
 
                 settings = {}
                 settings |= SETTINGS
-                settings |= {'file': data}
+                settings |= {'directory': data}
                 settings |= {'checkpoint': data.split('.')[0] + '.json'}
                 await parser.setting(**settings)
         else:
             print(flush=True)
-            names = explorer(FILE_RAW_PATH, '*.csv')
-            print('Список файлов:', names, sep='\n', flush=True)
-            data = input('Укажите имя файла: ')
+            names = explorer(PATH_RAW_DATA, exclude=('checkpoints',))
+            print('Список директорий:', names, sep='\n', flush=True)
+            data = input('Укажите имя директории: ')
 
             settings = {}
             settings |= SETTINGS
-            settings |= {'file': data}
+            settings |= {'directory': data}
             settings |= {'checkpoint': data.split('.')[0] + '.json'}
             await parser.setting(**settings)
 
