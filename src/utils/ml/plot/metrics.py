@@ -15,6 +15,7 @@ def metrics(y_test: pd.DataFrame,
             y_train: pd.DataFrame,
             title: str,
             labels: pd.Series,
+            name: str = 'metrics',
             path: str = None) -> None:
     """
     Строит график оценки модели с помощью различных метрик;
@@ -24,6 +25,7 @@ def metrics(y_test: pd.DataFrame,
     :param y_train: истинные значения классов в тренировочной выборке;
     :param title: заголовок графика;
     :param labels: метки классов;
+    :param name: имя файла;
     :param path: имя директории, в которую необходимо сохранить график;
     :return: None.
     """
@@ -221,7 +223,7 @@ def metrics(y_test: pd.DataFrame,
     # Сохраняем фигуру в файл.
     if path:
         figure.savefig(
-            fname=path + r'\metrics.png',
+            fname=path + fr'\{name}.png',
             bbox_inches='tight',
             dpi=250
         )
