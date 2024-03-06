@@ -7,7 +7,7 @@ from sklearn.naive_bayes import ComplementNB
 from sklearn.pipeline import Pipeline
 from nltk.corpus import stopwords
 
-nltk.download('wordnet')
+nltk.download('stopwords')
 
 title = 'ComplementNB'
 

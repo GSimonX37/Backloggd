@@ -7,7 +7,7 @@ from sklearn.multioutput import MultiOutputClassifier
 from sklearn.pipeline import Pipeline
 from nltk.corpus import stopwords
 
-nltk.download('wordnet')
+nltk.download('stopwords')
 
 title = 'SGDClassifier'
 
