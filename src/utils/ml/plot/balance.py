@@ -147,5 +147,5 @@ def balance(train: pd.DataFrame,
         figure.savefig(
             fname=path + r'\balance.png',
             bbox_inches='tight',
-            dpi=250
+            dpi=150
         )
