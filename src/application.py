@@ -3,7 +3,7 @@ import os
 import uvicorn
 
 from app.application import model
-from config.paths import TRAINED_MODELS_PATH
+from config.paths import PATH_TRAINED_MODELS
 from utils.explorer import explorer
 
 
@@ -14,13 +14,13 @@ def main() -> None:
     :return: None.
     """
 
-    names = explorer(TRAINED_MODELS_PATH)
+    names = explorer(PATH_TRAINED_MODELS)
     os.system('cls')
     print('Список моделей:', names, sep='\n', flush=True)
 
     if directory := input('Выберите модель: '):
-        file = TRAINED_MODELS_PATH + rf'\{directory}\{directory}.joblib'
-        labels = TRAINED_MODELS_PATH + rf'\{directory}\labels.json'
+        file = PATH_TRAINED_MODELS + rf'\{directory}\{directory}.joblib'
+        labels = PATH_TRAINED_MODELS + rf'\{directory}\labels.json'
 
         model.load(file, labels)
 

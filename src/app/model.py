@@ -31,7 +31,7 @@ class Model(object):
         with open(labels, 'r') as f:
             self.labels = json.loads(f.read())
 
-    def result(self, description: pd.DataFrame, threshold: float) -> dict:
+    def result(self, description: pd.Series, threshold: float) -> dict:
         """
         Предсказывает вероятности принадлежности видеоигры к игровым жанрам;
 

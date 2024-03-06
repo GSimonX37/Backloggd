@@ -5,6 +5,8 @@ from fastapi import Request
 from fastapi import Response
 
 from app.model import Model
+from utils.ml.preprocessing import cleaning
+from utils.ml.preprocessing import lemmatization
 
 
 model = Model()
@@ -38,11 +40,14 @@ async def send_response(request: Request) -> Response:
     description = data['description']
     threshold = data['threshold']
 
-    description = pd.DataFrame(
+    description = pd.Series(
         data=[description],
         index=[0],
-        columns=['description']
+        name='description'
     )
+
+    description = cleaning(description)
+    description = lemmatization(description)
 
     genres = model.result(
         description=description,
