@@ -1,23 +1,24 @@
 import numpy as np
+import nltk
 
-from sklearn.compose import ColumnTransformer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.naive_bayes import ComplementNB
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import MaxAbsScaler
+from nltk.corpus import stopwords
 
+nltk.download('wordnet')
 
 title = 'ComplementNB'
 
 vectorizer = TfidfVectorizer(
-    analyzer='word'
+    analyzer='word',
+    stop_words=stopwords.words('english')
 )
 
-standardizer = ColumnTransformer(
-    transformers=[
-        ('vectorizer', vectorizer, 0),
-        ('scaler', MaxAbsScaler(), slice(1, None))
+standardizer = Pipeline(
+    steps=[
+        ('vectorizer', vectorizer)
     ]
 )
 

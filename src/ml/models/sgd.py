@@ -1,24 +1,24 @@
 import numpy as np
+import nltk
 
-from sklearn.compose import ColumnTransformer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import SGDClassifier
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import MaxAbsScaler
+from nltk.corpus import stopwords
 
+nltk.download('wordnet')
 
 title = 'SGDClassifier'
 
 vectorizer = TfidfVectorizer(
     analyzer='word',
-    sublinear_tf=True
+    stop_words=stopwords.words('english')
 )
 
-standardizer = ColumnTransformer(
-    transformers=[
-        ('vectorizer', vectorizer, 0),
-        ('scaler', MaxAbsScaler(), slice(1, None))
+standardizer = Pipeline(
+    steps=[
+        ('vectorizer', vectorizer)
     ]
 )
 
