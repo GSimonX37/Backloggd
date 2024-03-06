@@ -1,11 +1,9 @@
-import ast
 import json
 import os
 
 import joblib
 import pandas as pd
 
-from sklearn.compose import ColumnTransformer
 from sklearn.metrics import f1_score
 from sklearn.metrics import make_scorer
 from sklearn.model_selection import GridSearchCV
@@ -15,6 +13,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer
 from sklearn.preprocessing import MultiLabelBinarizer
+from sklearn.dummy import DummyClassifier
 
 from config.ml import FIT_CV_SPLITTING_STRATEGY
 from config.ml import FIT_CV_VERBOSE
@@ -25,87 +24,100 @@ from config.ml import LEARNING_CURVE_VERBOSE
 from config.ml import N_JOBS
 from config.ml import RANDOM_STATE
 from config.ml import TEST_SIZE
-from config.paths import FILE_PREPROCESSED_PATH
-from config.paths import TRAIN_MODELS_REPORT_PATH
-from config.paths import TRAINED_MODELS_PATH
-from utils.ml.features import generate
+from config.paths import PATH_PREPROCESSED_DATA
+from config.paths import PATH_TRAIN_REPORT
+from config.paths import PATH_TRAINED_MODELS
 from utils.ml.plot.balance import balance
 from utils.ml.plot.calibration import calibration
 from utils.ml.plot.metrics import metrics
 from utils.ml.plot.scalability import scalability
 from utils.ml.plot.words import words
 from utils.ml.preprocessing import cleaning
-from utils.ml.preprocessing import is_ascii
 from utils.ml.preprocessing import lemmatization
-from utils.ml.preprocessing import stop_words
-from utils.ml.remove import remove
+from utils.ml.preprocessing import stopwords
 
 
-def train(file: str, models: list) -> None:
+def insert(key: int, values: pd.Series) -> list:
+    if key in values.index:
+        value = values[key]
+        return [value] if isinstance(value, str) else value.to_list()
+    else:
+        return []
+
+
+def train(folder: str, models: list) -> None:
     """
     Обучает модели;
 
-    :param file: имя предобработанного файла в формате csv;
+    :param folder: директория с предварительно обработанными данными;
     :param models: список с параметрами тренируемых моделей;
     :return: None.
     """
 
-    df = pd.read_csv(fr'{FILE_PREPROCESSED_PATH}\{file}')
+    file_paths = {
+        'games': f'{PATH_PREPROCESSED_DATA}/{folder}/games.csv',
+        'genres': f'{PATH_PREPROCESSED_DATA}/{folder}/genres.csv',
+    }
 
-    # Преобразование поля "genres" к типу list.
-    df['genres'] = df['genres'].apply(ast.literal_eval)
+    df = {file: pd.read_csv(path) for file, path in file_paths.items()}
 
-    # Отбор видеоигр, в описаниях которых присутствуют только ascii символы.
-    data = df[df.apply(is_ascii, axis=1)]
+    # Отбор описаний видеоигр.
+    data = df['games'].loc[:, ['id', 'description']].copy()
 
-    # Отбор данных.
+    # Удаление записей без описания.
     data = (data
-            .loc[(data['description'].notna()) &
-                 (data['genres'].map(bool)), ['description', 'genres']]
+            .loc[data['description'].notna(), :]
             .reset_index(drop=True))
-    data = data[data['description'].str.len() > 50]
 
-    data['genres'] = data['genres'].apply(remove)
-    data = data[data['genres'].map(bool)].reset_index(drop=True)
+    # Отбор записей только с ascii-символами.
+    data = (data
+            .loc[data['description'].apply(lambda s: s.isascii()), :]
+            .reset_index(drop=True))
 
-    x = data[['description']]
-    y = data['genres']
+    # Отбор 20 самых популярных жанров.
+    genres = df['genres']['genre'].value_counts().index[:20]
+    genres = (df['genres']
+              .loc[df['genres']['genre'].isin(genres), :]
+              .set_index('id'))['genre']
+
+    # Объединение данных.
+    data.insert(
+            loc=data.shape[1],
+            column='genres',
+            value=data['id'].apply(insert, values=genres)
+    )
+    data = data.drop('id', axis=1)
+
+    data = (data
+            .loc[data['genres'].map(bool), :]
+            .reset_index(drop=True))
 
     # Создание препроцессора.
-    generator = FunctionTransformer(generate)
-    cleaner = ColumnTransformer(
-        transformers=[
-            ('preprocessor', FunctionTransformer(cleaning), [0]),
-        ],
-        remainder='passthrough'
-    )
-    lemmatizer = ColumnTransformer(
-        transformers=[
-            ('preprocessor', FunctionTransformer(lemmatization), [0]),
-        ],
-        remainder='passthrough'
-    )
+    cleaner = FunctionTransformer(cleaning)
+    lemmatizer = FunctionTransformer(lemmatization)
     preprocessor = Pipeline(
         steps=[
-            ('generator', generator),
             ('cleaner', cleaner),
             ('lemmatizer', lemmatizer)
         ]
     )
 
-    x = pd.DataFrame(
-        data=preprocessor.fit_transform(x),
-        columns=(preprocessor
-                 .named_steps['cleaner']
-                 .feature_names_in_)
-    )
+    # Очистка и лемматизация текста
+    data['description'] = preprocessor.fit_transform(data['description'])
 
-    # Кодирование меток.
-    label_encoder = MultiLabelBinarizer()
-    label_encoder.fit(y)
-    labels = pd.Series(label_encoder.classes_)
+    # Отбор записей, описание которых не состоит только из пробельных символов.
+    data = (data
+            .loc[~data['description'].apply(lambda s: s.isspace()), :]
+            .reset_index(drop=True))
 
-    y = pd.DataFrame(label_encoder.transform(y))
+    # Разделение на признаки.
+    x = data['description']
+    y = data['genres']
+
+    encoder = MultiLabelBinarizer()
+    encoder.fit(y)
+    y = pd.DataFrame(encoder.transform(y))
+    labels = pd.Series(encoder.classes_)
 
     # Разделение на выборки.
     x_train, x_test, y_train, y_test = train_test_split(
@@ -124,7 +136,7 @@ def train(file: str, models: list) -> None:
             model['params'],
         )
 
-        path = fr'{TRAIN_MODELS_REPORT_PATH}\{name}'
+        path = fr'{PATH_TRAIN_REPORT}\{name}'
         if not os.path.exists(path):
             os.mkdir(path)
 
@@ -134,11 +146,11 @@ def train(file: str, models: list) -> None:
         # Сохранение отчета об частоте встречающихся слов в текстах.
         words(
             data=pd.concat(
-                objs=[x[['description']], y],
+                objs=[x, y],
                 axis=1
             ),
             labels=labels,
-            stop_words=stop_words,
+            stop_words=stopwords,
             path=fr'{path}\images'
         )
 
@@ -242,7 +254,32 @@ def train(file: str, models: list) -> None:
             path=fr'{path}\images'
         )
 
-        path = fr'{TRAINED_MODELS_PATH}\{name}'
+        # Сравнение с простым классификатором.
+        dummy_clf = DummyClassifier(
+                strategy='stratified',
+                random_state=RANDOM_STATE
+        )
+        dummy_clf.fit(x_train, y_train)
+
+        predict = pd.DataFrame(dummy_clf.predict(x_test))
+        f1 = f1_score(
+                y_true=y_test,
+                y_pred=predict,
+                average='weighted'
+        )
+
+        metrics(
+            y_test=y_test,
+            y_predict=pd.DataFrame(predict),
+            y_train=y_train,
+            title=f'Результаты обучения DummyClassifier (stratified) '
+                  f'(F1-weighted: {f1:.4f}) на тестовой выборке',
+            labels=labels,
+            name='dummy',
+            path=fr'{path}\images'
+        )
+
+        path = fr'{PATH_TRAINED_MODELS}\{name}'
         if not os.path.exists(path):
             os.mkdir(path)
 

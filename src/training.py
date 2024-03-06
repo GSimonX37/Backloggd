@@ -1,7 +1,7 @@
 import os
 
-from config.paths import FILE_PREPROCESSED_PATH
-from config.paths import MODELS_PATH
+from config.paths import PATH_PREPROCESSED_DATA
+from config.paths import PATH_MODELS
 from ml.training import train
 from utils.explorer import explorer
 
@@ -13,15 +13,17 @@ def main():
     :return: None.
     """
 
-    names = explorer(FILE_PREPROCESSED_PATH, '*.csv')
+    names = explorer(PATH_PREPROCESSED_DATA)
     os.system('cls')
-    print('Список предобработанных файлов:', names, sep='\n', flush=True)
+    print('Список предварительно обработанных данных:', names,
+          sep='\n',
+          flush=True)
 
-    if data := input('Выберите файл: '):
+    if data := input('Выберите данные: '):
         models = []
 
         print(flush=True)
-        names = explorer(MODELS_PATH, '*.py')
+        names = explorer(PATH_MODELS, '*.py')
         print('Список файлов c моделями:', names, sep='\n', flush=True)
 
         if files := input('Выберите один или несколько файлов: '):
@@ -45,7 +47,7 @@ def main():
                     }
                 )
 
-        train(file=data, models=models)
+        train(folder=data, models=models)
 
 
 if __name__ == '__main__':

@@ -1,7 +1,6 @@
 import re
 
 import nltk
-import numpy as np
 import pandas as pd
 
 from nltk.corpus import stopwords
@@ -13,20 +12,7 @@ nltk.download('averaged_perceptron_tagger')
 nltk.download('stopwords')
 nltk.download('wordnet')
 
-stop_words = stopwords.words('english')
-
-
-def is_ascii(row: pd.Series) -> bool:
-    """
-    Проверяет, является ли значение в поле "description" пустым
-    или содержит строку только с ascii символами;
-
-    :param row: строка набора данных;
-    :return: логическое значение.
-    """
-
-    return (pd.isna(row["description"]) or pd.notna(row["description"])
-            and row["description"].isascii())
+stopwords = stopwords.words('english')
 
 
 def clear(text: str) -> str:
@@ -49,7 +35,7 @@ def clear(text: str) -> str:
     return text
 
 
-def cleaning(data: pd.DataFrame) -> pd.DataFrame:
+def cleaning(data: pd.Series) -> pd.Series:
     """
     Очищает строки набора данных от символов,
     отличных от букв английского алфавита в верхнем и нижнем регистрах;
@@ -58,9 +44,7 @@ def cleaning(data: pd.DataFrame) -> pd.DataFrame:
     :return: очищенный набор данных.
     """
 
-    data.iloc[:, 0] = data.iloc[:, 0].apply(clear)
-
-    return data
+    return data.copy().apply(clear)
 
 
 def get_wordnet_pos(word: str) -> str:
@@ -109,7 +93,7 @@ def lemmatize(text: str) -> str:
     return result
 
 
-def lemmatization(data: np.ndarray) -> pd.DataFrame:
+def lemmatization(data: pd.Series) -> pd.Series:
     """
     Производит лемматизацию строк набора данных;
 
@@ -117,7 +101,4 @@ def lemmatization(data: np.ndarray) -> pd.DataFrame:
     :return: набор данных.
     """
 
-    data = pd.DataFrame(data)
-    data.iloc[:, 0] = data.iloc[:, 0].apply(lemmatize)
-
-    return data
+    return data.copy().apply(lemmatize)
