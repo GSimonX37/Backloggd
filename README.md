@@ -22,7 +22,6 @@
         <tr>
             <th>№</th>
             <th>Название этапа</th>
-            <th>Решаемая задача</th>
             <th>Описание этапа</th>
             <th>Инструменты</th>
         </tr>
@@ -30,47 +29,21 @@
     <tbody>
         <tr>
             <td>1</td>
-            <td>Реализация программы по сбору данных</td>
-            <td rowspan="2">Сбор и систематизация данных</td>
-            <td>
-                Написание программы, осуществляющей сбор данных с сайта 
-                <a href="https://www.backloggd.com/">backloggd.com</a>.
-            </td>
-            <td> 
-                <ul>
-                    <li>aiohttp</li>
-                </ul> 
-            </td>
-        </tr>
-        <tr>
-            <td>2</td>
             <td>Сбор и систематизация данных</td>
             <td>
-                Сбор данных с сайта 
-                <a href="https://www.backloggd.com/">backloggd.com.</a>
-            </td>
-            <td>-</td>
-        </tr>
-        <tr>
-            <td>3</td>
-            <td>Предварительная обработка данных</td>
-            <td rowspan="2">
-                Предварительная обработка и разведочный анализ данных
-            </td>
-            <td>
-                Подготовка данных к разведочному анализу и последующим этапам.
+                Написание программы, осуществляющей сбор и систематизацию данных 
+                с сайта <a href="https://www.backloggd.com">backloggd.com</a>.
+                Сбор и систематизация данных.
             </td>
             <td> 
                 <ul>
-                    <li>ast</li>
-                    <li>jupyterlab</li>
-                    <li>numpy</li>
-                    <li>pandas</li>
+                    <li>AIOHTTP</li>
+                    <li>BeautifulSoup4</li>
                 </ul> 
-            </td>
+            </td> 
         </tr>
-        <tr>
-            <td>4</td>
+         <tr>
+            <td>2</td>
             <td>Разведочный анализ данных</td>
             <td>
                 Анализ основных свойств данных, выявление распределений, 
@@ -79,17 +52,16 @@
             </td>
             <td> 
                 <ul>
-                    <li>jupyterlab</li>
-                    <li>matplotlib</li>
-                    <li>numpy</li>
-                    <li>pandas</li>
-                    <li>seaborn</li>
+                    <li>Jupyter</li>
+                    <li>Matplotlib</li>
+                    <li>NumPy</li>
+                    <li>Pandas</li>
+                    <li>Seaborn</li>
                 </ul> 
             </td>
         </tr>
         <tr>
-            <td>5</td>
-            <td>Статистический анализ данных</td>
+            <td>3</td>
             <td>Статистический анализ данных</td>
             <td>
                 Подтверждение или опровержение закономерностей, 
@@ -97,18 +69,17 @@
             </td>
             <td> 
                 <ul>
-                    <li>jupyterlab</li>
-                    <li>matplotlib</li>
-                    <li>numpy</li>
-                    <li>pandas</li>
-                    <li>scipy</li>
-                    <li>seaborn</li>
+                    <li>Jupyter</li>
+                    <li>Matplotlib</li>
+                    <li>NumPy</li>
+                    <li>Pandas</li>
+                    <li>SciPy</li>
+                    <li>Seaborn</li>
                 </ul> 
             </td>
         </tr>
         <tr>
-            <td>6</td>
-            <td>Обучение модели</td>
+        <td>4</td>
             <td>Обучение модели</td>
             <td>
                 На основе предварительно обработанных данных, обучение модели, 
@@ -118,33 +89,30 @@
             </td>
             <td> 
                 <ul>
-                    <li>ast</li>
-                    <li>jupyterlab</li>
-                    <li>nltk</li>
-                    <li>numpy</li>
-                    <li>pandas</li>
-                    <li>seaborn</li>
-                    <li>sklearn</li>
+                    <li>Jupyter</li>
+                    <li>NLTK</li>
+                    <li>NumPy</li>
+                    <li>Pandas</li>
+                    <li>Seaborn</li>
+                    <li>Scikit-learn</li>
                 </ul> 
             </td>
         </tr>
         <tr>
-            <td>7</td>
-            <td>Создание веб-сервиса</td>
+            <td>5</td>
             <td>Создание веб-сервиса</td>
             <td>
-                Создание веб-сервиса и интеграция в него модели, 
-                предсказывающую игровые жанры, 
-                к которым принадлежит видеоигра с заданным описанием.
+                Интеграция модели в веб-сервис.
             </td>
             <td> 
                 <ul>
-                    <li>fastapi</li>
-                    <li>pandas</li>
+                    <li>FastAPI</li>
+                    <li>Pandas</li>
+                    <li>Uvicorn</li>
                 </ul> 
             </td>
         </tr>
-    </tbody>     
+    </tbody>
 </table>
 
 ## Блокноты
@@ -185,7 +153,7 @@
 ![words](resources/training/words.png)
 
 Наилучшей предсказательной способностью обладает модель **SGDClassifier**. 
-На тестовых данных удалось достичь метрики **F1-weighted** более **0.62**
+На тестовых данных удалось достичь метрики **F1-weighted** более **0.59**
 
 ![words](resources/training/metrics.png)
 

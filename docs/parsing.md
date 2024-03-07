@@ -7,10 +7,10 @@
 import asyncio
 import os
 
-from config.parser.spider import SETTINGS
-from config.paths import CHECKPOINT_PATH
-from config.paths import FILE_RAW_PATH
-from parser.parser import Spider
+from config.parser.parser import SETTINGS
+from config.paths import PATH_CHECKPOINT
+from config.paths import PATH_RAW_DATA
+from parser.parser import Parser
 from utils.explorer import explorer
 
 
@@ -21,51 +21,51 @@ async def main():
     :return: None.
     """
 
-    spider = Spider()
+    parser = Parser()
 
     os.system('cls')
     print('Соединение с сервером...', end=' ', flush=True)
 
-    if code := await spider.connect() == 200:
+    if code := await parser.connect() == 200:
         print('Ок.', flush=True)
 
-        if names := explorer(CHECKPOINT_PATH, '*.json'):
+        if names := explorer(PATH_CHECKPOINT, '*.json'):
             print(flush=True)
             print('Список контрольных точек:', names, sep='\n', flush=True)
             if checkpoint := input('Загрузить контрольную точку: '):
-                await spider.load(checkpoint)
+                await parser.load(checkpoint)
             else:
                 print(flush=True)
-                names = explorer(FILE_RAW_PATH, '*.csv')
-                print('Список файлов:', names, sep='\n', flush=True)
-                data = input('Укажите имя файла: ')
+                names = explorer(PATH_RAW_DATA, exclude=('checkpoints', ))
+                print('Список директорий:', names, sep='\n', flush=True)
+                data = input('Укажите имя директории: ')
 
                 settings = {}
                 settings |= SETTINGS
-                settings |= {'file': data}
+                settings |= {'directory': data}
                 settings |= {'checkpoint': data.split('.')[0] + '.json'}
-                await spider.setting(**settings)
+                await parser.setting(**settings)
         else:
             print(flush=True)
-            names = explorer(FILE_RAW_PATH, '*.csv')
-            print('Список файлов:', names, sep='\n', flush=True)
-            data = input('Укажите имя файла: ')
+            names = explorer(PATH_RAW_DATA, exclude=('checkpoints',))
+            print('Список директорий:', names, sep='\n', flush=True)
+            data = input('Укажите имя директории: ')
 
             settings = {}
             settings |= SETTINGS
-            settings |= {'file': data}
+            settings |= {'directory': data}
             settings |= {'checkpoint': data.split('.')[0] + '.json'}
-            await spider.setting(**settings)
+            await parser.setting(**settings)
 
-        await spider.state()
+        await parser.state()
 
         print(flush=True)
         if not input('Нажмите "Enter" для продолжения.'):
-            await spider.scrape()
+            await parser.scrape()
     else:
         print(f'Неудача (код {code}).', end='\n\n', flush=True)
 
-    await spider.disconnect()
+    await parser.disconnect()
 
 
 if __name__ == '__main__':
@@ -74,32 +74,32 @@ if __name__ == '__main__':
 
 Файл состоит из определения функции `main`, 
 которая передается в функцию `asyncio.run`, 
-так как программа исполняется в асинхронном режиме.
+так как программа выполняется в асинхронном режиме.
 
 ## Начало сбора данных
 
 Чтобы начать сбор данных, необходимо запустить файл [parsing.py](../src/parsing.py). 
 После запуска, программа соединится с сервером, после чего, 
-пользователю будет предложено указать имя файла с расширением `*.csv`. 
-Перед этим будет выведен список файлов, имеющихся в папке [raw](../data/raw).
-В данной папке будут храниться файлы, собранные с помощью программы и 
-непрошедшие [предварительную обработку](preprocessing.md). 
+пользователю будет предложено указать имя каталога. 
+Перед этим будет выведен список каталогов, имеющихся в папке [raw](../data/raw).
+В данной папке будут храниться каталоги с файлами, собранные с помощью программы 
+и непрошедшие [предварительную обработку](preprocessing). 
 
 ![file](../resources/parsing/file.jpg)
 
 >Обратите внимание, если вы ранее осуществляли сбор данных 
 >и не завершили его до конца, вероятнее всего, в папке 
 >[checkpoints](../data/raw/checkpoints) находится файл контрольной точки, 
->тогда перед предложением указать имя файла с расширением `*.csv` 
+>тогда перед предложением указать имя каталога 
 >будет предложено выбрать файл контрольной точки с расширением `.json`
 >для возобновления процесса сбора данных 
 >(см. [Возобновление сбора данных](#возобновление-сбора-данных)). 
 >Чтобы, пропустить выбор контрольной точки, нажмите клавишу "Enter".
 
->Если вы укажите имя существующего файла, то все данные, находящиеся в нем, 
+>Если вы укажите имя существующего каталога, то все данные, находящиеся в нем, 
 >будут перезаписаны.
 
-После ввода имени файла, через некоторое время (программе необходимо получить 
+После ввода имени каталога, через некоторое время (программе необходимо получить 
 объем страниц, находящихся на сервере), появится текущее состояние, 
 которое будет отслеживаться в процессе сбора данных.
 
@@ -131,6 +131,12 @@ if __name__ == '__main__':
 в котором находилась программа в момент создания контрольной точки.
 
 ![continue](../resources/parsing/continue.jpg)
+
+>Когда вы загружаете файл контрольной точки, программе не только необходимо 
+> получить объем страниц, находящихся на сервере (как если бы вы начали сбор 
+> данных с самого начала), но и вычислить объем и количество записей 
+> уже имеющихся данных, что может занять некоторое время 
+> (обычно не более 1 минуты).
 
 Нажмите клавишу "Enter", чтобы продолжить сбор данных.
 

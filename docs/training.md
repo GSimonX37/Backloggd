@@ -6,9 +6,9 @@
 ```python
 import os
 
-from config.paths import FILE_PREPROCESSED_PATH
-from config.paths import MODELS_PATH
-from ml.training import fit
+from config.paths import PATH_PREPROCESSED_DATA
+from config.paths import PATH_MODELS
+from ml.training import train
 from utils.explorer import explorer
 
 
@@ -19,15 +19,17 @@ def main():
     :return: None.
     """
 
-    names = explorer(FILE_PREPROCESSED_PATH, '*.csv')
+    names = explorer(PATH_PREPROCESSED_DATA)
     os.system('cls')
-    print('Список предобработанных файлов:', names, sep='\n', flush=True)
+    print('Список предварительно обработанных данных:', names,
+          sep='\n',
+          flush=True)
 
-    if data := input('Выберите файл: '):
+    if data := input('Выберите данные: '):
         models = []
 
         print(flush=True)
-        names = explorer(MODELS_PATH, '*.py')
+        names = explorer(PATH_MODELS, '*.py')
         print('Список файлов c моделями:', names, sep='\n', flush=True)
 
         if files := input('Выберите один или несколько файлов: '):
@@ -35,23 +37,23 @@ def main():
                 name = file.split('.')[0]
 
                 modul = __import__(
-                        name=f'training.models.{name}',
-                        globals=globals(),
-                        locals=locals(),
-                        fromlist=['title', 'model', 'params'],
-                        level=0
+                    name=f'ml.models.{name}',
+                    globals=globals(),
+                    locals=locals(),
+                    fromlist=['title', 'model', 'params'],
+                    level=0
                 )
 
                 models.append(
-                        {
-                            'name': name,
-                            'title': modul.title,
-                            'model': modul.model,
-                            'params': modul.params,
-                        }
+                    {
+                        'name': name,
+                        'title': modul.title,
+                        'model': modul.model,
+                        'params': modul.params,
+                    }
                 )
 
-        fit(file=data, models=models)
+        train(folder=data, models=models)
 
 
 if __name__ == '__main__':
@@ -63,14 +65,15 @@ if __name__ == '__main__':
 Чтобы начать процесс тренировки моделей, необходимо запустить данный файл. 
 Программа отобразит содержимое каталога [processed](../data/processed), 
 где хранятся файлы, сформированные на этапе предварительной обработки данных 
-(см. [Предварительная обработка данных](preprocessing.md)).
+(см. [Предварительная обработка данных](preprocessing.md)). Необходимо выбрать каталог 
+с данными, на которых модель будет обучаться.
 
 ![file](../resources/training/file.jpg)
 
 После выбора данных, на которых будет проводиться тренировка, 
 необходимо выбрать одну или несколько моделей. 
 
-![file](../resources/training/models.jpg)
+![models](../resources/training/models.jpg)
 
 Все модели должны располагаться в каталоге [models](../src/ml/models), 
 с расширением `*.py` и иметь следующее содержимое:
@@ -81,25 +84,21 @@ if __name__ == '__main__':
 ```python
 import numpy as np
 
-from sklearn.compose import ColumnTransformer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import SGDClassifier
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import MaxAbsScaler
 
 
 title = 'SGDClassifier'
 
 vectorizer = TfidfVectorizer(
-    analyzer='word',
-    sublinear_tf=True
+    analyzer='word'
 )
 
-standardizer = ColumnTransformer(
-    transformers=[
-        ('vectorizer', vectorizer, 0),
-        ('scaler', MaxAbsScaler(), slice(1, None))
+standardizer = Pipeline(
+    steps=[
+        ('vectorizer', vectorizer)
     ]
 )
 
@@ -150,7 +149,7 @@ params = {
 указанного перед началом тренировки. В каталоге будут находиться файлы: 
 - `labels.json` - метки классов, наблюдаемые в данных, 
 во время тренировки модели.
-- файл тренированной модели с расширением `*.joblib`, 
+- файл обученной модели с расширением `*.joblib`, 
 имя которого будет совпадать с названием файла модели, 
 указанного перед началом тренировки.
 
@@ -167,19 +166,22 @@ params = {
 - `balance.png` - баланс классов в тренировочной и тестовой выборах;
 - `metrics.png` - предсказательная способность модели;
 - `scalability.png` - масштабируемость модели;
-- `calibration.png` - калиброванность модели.
+- `calibration.png` - калиброванность модели;
+- `dummy.png` - предсказательная способность простой модели.
 
 Примеры графических материалов, сформированных по результатам тренировки модели:
 
 ![words](../resources/training/words.png)
 
-![words](../resources/training/balance.png)
+![balance](../resources/training/balance.png)
 
-![words](../resources/training/metrics.png)
+![metrics](../resources/training/metrics.png)
 
-![words](../resources/training/scalability.png)
+![scalability](../resources/training/scalability.png)
 
-![words](../resources/training/calibration.png)
+![calibration](../resources/training/calibration.png)
+
+![dummy](../resources/training/dummy.png)
 
 
 [К описанию проекта](../README.md)
