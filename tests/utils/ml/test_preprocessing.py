@@ -24,14 +24,14 @@ def test_clear_text_value(text: str, expected: str):
 @pytest.mark.parametrize(
     ['data'],
     [
-        (pd.DataFrame(data=[''], index=[0]), ),
-        (pd.DataFrame(data=['One', 'Two', 'Three'], index=range(3)), ),
-        (pd.DataFrame(data=['One - 1. Two - 2. Three - 3.'], index=[0]), ),
-        (pd.DataFrame(data=['1', '2', '3', '4', '5'], index=range(5)), )
+        (pd.Series(data=[''], index=[0]), ),
+        (pd.Series(data=['One', 'Two', 'Three'], index=range(3)), ),
+        (pd.Series(data=['One - 1. Two - 2. Three - 3.'], index=[0]), ),
+        (pd.Series(data=['1', '2', '3', '4', '5'], index=range(5)), )
     ]
 )
-def test_cleaning_data_type(data: pd.DataFrame):
-    result = isinstance(cleaning(data), pd.DataFrame)
+def test_cleaning_data_type(data: pd.Series):
+    result = isinstance(cleaning(data), pd.Series)
     assert result
 
 
@@ -51,12 +51,12 @@ def test_lemmatize_text_value(text: str, expected: str):
 @pytest.mark.parametrize(
     ['data'],
     [
-        (pd.DataFrame(data=[''], index=[0]), ),
-        (pd.DataFrame(data=['One', 'Two', 'Three'], index=range(3)), ),
-        (pd.DataFrame(data=['One - 1. Two - 2. Three - 3.'], index=[0]), ),
-        (pd.DataFrame(data=['1', '2', '3', '4', '5', ], index=range(5)), )
+        (pd.Series(data=[''], index=[0]), ),
+        (pd.Series(data=['One', 'Two', 'Three'], index=range(3)), ),
+        (pd.Series(data=['One - 1. Two - 2. Three - 3.'], index=[0]), ),
+        (pd.Series(data=['1', '2', '3', '4', '5', ], index=range(5)), )
     ]
 )
-def test_lemmatization_data_type(data: pd.DataFrame):
-    result = isinstance(lemmatization(data.values), pd.DataFrame)
+def test_lemmatization_data_type(data: pd.Series):
+    result = isinstance(lemmatization(data), pd.Series)
     assert result
