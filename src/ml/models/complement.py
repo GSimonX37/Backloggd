@@ -1,11 +1,12 @@
-import numpy as np
 import nltk
+import numpy as np
 
+from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.naive_bayes import ComplementNB
 from sklearn.pipeline import Pipeline
-from nltk.corpus import stopwords
+
 
 nltk.download('stopwords')
 

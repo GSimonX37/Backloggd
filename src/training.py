@@ -1,7 +1,7 @@
 import os
 
-from config.paths import PATH_PREPROCESSED_DATA
 from config.paths import PATH_MODELS
+from config.paths import PATH_PREPROCESSED_DATA
 from ml.training import train
 from utils.explorer import explorer
 

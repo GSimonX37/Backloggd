@@ -1,11 +1,12 @@
-import numpy as np
 import nltk
+import numpy as np
 
+from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.svm import LinearSVC
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.pipeline import Pipeline
-from nltk.corpus import stopwords
+from sklearn.svm import LinearSVC
+
 
 nltk.download('stopwords')
 

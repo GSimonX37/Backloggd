@@ -4,6 +4,7 @@ import os
 import joblib
 import pandas as pd
 
+from sklearn.dummy import DummyClassifier
 from sklearn.metrics import f1_score
 from sklearn.metrics import make_scorer
 from sklearn.model_selection import GridSearchCV
@@ -13,7 +14,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer
 from sklearn.preprocessing import MultiLabelBinarizer
-from sklearn.dummy import DummyClassifier
 
 from config.ml import FIT_CV_SPLITTING_STRATEGY
 from config.ml import FIT_CV_VERBOSE
@@ -38,6 +38,14 @@ from utils.ml.preprocessing import stopwords
 
 
 def insert(key: int, values: pd.Series) -> list:
+    """
+    Группирует значения по ключу в список;
+
+    :param key: ключ, по которому группируются значения;
+    :param values: значения;
+    :return: список значений.
+    """
+
     if key in values.index:
         value = values[key]
         return [value] if isinstance(value, str) else value.to_list()
