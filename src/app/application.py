@@ -61,5 +61,5 @@ async def send_response(request: Request) -> Response:
     return Response(
         status_code=200,
         media_type='application/json',
-        content=f'{body}'.encode('utf-8')
+        content=f'{body}'
     )

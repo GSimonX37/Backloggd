@@ -28,7 +28,7 @@ class Model(object):
 
         self.model = joblib.load(model)
 
-        with open(labels, 'r') as f:
+        with open(labels) as f:
             self.labels = json.loads(f.read())
 
     def result(self, description: pd.Series, threshold: float) -> dict:

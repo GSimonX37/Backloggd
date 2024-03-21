@@ -38,9 +38,8 @@ class Game(object):
 
     def __bool__(self):
         for attribute in self.__dict__:
-            if attribute != 'release':
-                if getattr(self, attribute):
-                    return True
+            if attribute != 'release' and getattr(self, attribute):
+                return True
 
         return False
 
