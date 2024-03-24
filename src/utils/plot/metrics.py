@@ -7,7 +7,7 @@ from matplotlib.gridspec import GridSpec
 from sklearn.metrics import classification_report
 from sklearn.metrics import multilabel_confusion_matrix
 
-from utils.ml.plot.step import step
+from .step import step
 
 
 def metrics(y_test: pd.DataFrame,

@@ -6,7 +6,7 @@ import seaborn as sns
 from matplotlib.gridspec import GridSpec
 from sklearn.feature_extraction.text import CountVectorizer
 
-from utils.ml.plot.step import step
+from .step import step
 
 
 def words(data: pd.DataFrame,
