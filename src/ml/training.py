@@ -27,11 +27,7 @@ from config.ml import TEST_SIZE
 from config.paths import PATH_PREPROCESSED_DATA
 from config.paths import PATH_TRAIN_REPORT
 from config.paths import PATH_TRAINED_MODELS
-from utils.ml.plot.balance import balance
-from utils.ml.plot.calibration import calibration
-from utils.ml.plot.metrics import metrics
-from utils.ml.plot.scalability import scalability
-from utils.ml.plot.words import words
+from utils import plot
 from utils.ml.preprocessing import cleaning
 from utils.ml.preprocessing import lemmatization
 from utils.ml.preprocessing import stopwords
@@ -152,7 +148,7 @@ def train(folder: str, models: list) -> None:
             os.mkdir(fr'{path}\images')
 
         # Сохранение отчета об частоте встречающихся слов в текстах.
-        words(
+        plot.words(
             data=pd.concat(
                 objs=[x, y],
                 axis=1
@@ -163,7 +159,7 @@ def train(folder: str, models: list) -> None:
         )
 
         # Сохранение отчета о балансе классов в выборках.
-        balance(
+        plot.balance(
             train=y_train,
             test=y_test,
             labels=labels,
@@ -223,7 +219,7 @@ def train(folder: str, models: list) -> None:
 
         x_train_size = x_train.shape[0]
         x_train_size *= (1 - LEARNING_CURVE_SPLITTING_STRATEGY_TEST_SIZE)
-        scalability(
+        plot.scalability(
             train_sizes=pd.Series((train_sizes / x_train_size * 100).round(1)),
             train_scores=pd.DataFrame(train_scores),
             test_scores=pd.DataFrame(test_scores),
@@ -243,7 +239,7 @@ def train(folder: str, models: list) -> None:
             average='weighted'
         )
 
-        metrics(
+        plot.metrics(
             y_test=y_test,
             y_predict=pd.DataFrame(predict),
             y_train=y_train,
@@ -254,7 +250,7 @@ def train(folder: str, models: list) -> None:
         )
 
         # Оценка калиброванности.
-        calibration(
+        plot.calibration(
             y_true=y_test,
             y_proba=[pd.DataFrame(x) for x in predict_proba],
             labels=labels,
@@ -276,7 +272,7 @@ def train(folder: str, models: list) -> None:
                 average='weighted'
         )
 
-        metrics(
+        plot.metrics(
             y_test=y_test,
             y_predict=pd.DataFrame(predict),
             y_train=y_train,
