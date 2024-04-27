@@ -18,7 +18,7 @@ def explorer(path: str, ext: str = '', exclude: tuple = ()) -> str:
 
     if ext:
         for i, element in enumerate(directory.glob(ext), start=1):
-            if element.is_file():
+            if element.is_file() and element.name not in exclude:
                 elements += [f'{i}. {element.name}.']
     else:
         i = 1
