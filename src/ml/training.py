@@ -17,9 +17,9 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer
 from sklearn.preprocessing import MultiLabelBinarizer
 
-from config.ml import LEARNING_CURVE_SPLITTING_STRATEGY_N_SPLITS
-from config.ml import LEARNING_CURVE_SPLITTING_STRATEGY_TEST_SIZE
-from config.ml import LEARNING_CURVE_SPLITTING_STRATEGY_TRAIN_SIZES
+from config.ml import LEARNING_CURVE_N_SPLITS
+from config.ml import LEARNING_CURVE_TEST_SIZE
+from config.ml import LEARNING_CURVE_TRAIN_SIZES
 from config.ml import N_JOBS
 from config.ml import RANDOM_STATE
 from config.ml import TEST_SIZE
@@ -253,10 +253,10 @@ def train(students: dict[str: Student],
             estimator=model,
             X=x_train,
             y=y_train,
-            train_sizes=LEARNING_CURVE_SPLITTING_STRATEGY_TRAIN_SIZES,
+            train_sizes=LEARNING_CURVE_TRAIN_SIZES,
             cv=ShuffleSplit(
-                n_splits=LEARNING_CURVE_SPLITTING_STRATEGY_N_SPLITS,
-                test_size=LEARNING_CURVE_SPLITTING_STRATEGY_TEST_SIZE,
+                n_splits=LEARNING_CURVE_N_SPLITS,
+                test_size=LEARNING_CURVE_TEST_SIZE,
                 random_state=RANDOM_STATE
             ),
             n_jobs=N_JOBS,
@@ -266,7 +266,7 @@ def train(students: dict[str: Student],
         )
 
         x_train_size = x_train.shape[0]
-        x_train_size *= (1 - LEARNING_CURVE_SPLITTING_STRATEGY_TEST_SIZE)
+        x_train_size *= (1 - LEARNING_CURVE_TEST_SIZE)
         plot.scalability(
             train_sizes=pd.Series((train_sizes / x_train_size * 100).round(1)),
             train_scores=pd.DataFrame(train_scores),
@@ -313,10 +313,11 @@ def train(students: dict[str: Student],
         dummy_clf.fit(x_train, y_train)
 
         predict = pd.DataFrame(dummy_clf.predict(x_test))
+
         f1 = f1_score(
-                y_true=y_test,
-                y_pred=predict,
-                average='weighted'
+            y_true=y_test,
+            y_pred=predict,
+            average='weighted'
         )
 
         plot.metrics(
