@@ -10,6 +10,7 @@ seaborn==0.13.2
 aiohttp==3.8.6
 beautifulsoup4==4.12.3
 pytest==8.0.2
+optuna==3.6.1
 jupyterlab==4.1.5
 ruff==0.3.3
 interrogate==1.5.0
