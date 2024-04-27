@@ -11,8 +11,6 @@ from sklearn.metrics import make_scorer
 from .student import Student
 
 
-nltk.download('stopwords')
-
 title = 'SGDClassifier'
 
 vectorizer = TfidfVectorizer(
@@ -51,7 +49,7 @@ params = {
     'standardizer__vectorizer__sublinear_tf': ['categorical', [True, False]],
     'standardizer__vectorizer__max_features': ['int', {'low': 200_000,
                                                        'high': 1_500_000,
-                                                       'step ': 100_000}],
+                                                       'step': 100_000}],
     'standardizer__vectorizer__min_df': ['int', {'low': 2,
                                                  'high': 20,
                                                  'step': 2}],
@@ -62,7 +60,7 @@ params = {
                                               'high': 1.0,
                                               'step': 0.1}],
     'estimator__estimator__class_weight': ['categorical', [None, 'balanced']],
-    'estimator__estimator__l1_ratio': ['float', {'low': 0.0,
+    'estimator__estimator__l1_ratio': ['float', {'low': 1.0,
                                                  'high': 1.0,
                                                  'step': 0.1}]
 }
@@ -73,8 +71,9 @@ scorer = make_scorer(
     zero_division=0.0
 )
 
-sgd = Student(
+student = Student(
     model=model,
+    name='SGDClassifier',
     params=params,
     scorer=lambda x, y: f1_score(x, y, average='weighted'),
     scoring=scorer,
