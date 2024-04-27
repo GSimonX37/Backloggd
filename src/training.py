@@ -20,10 +20,12 @@ def main():
           flush=True)
 
     if data := input('Выберите данные: '):
-        models = []
+        students = {}
 
         print(flush=True)
-        names = explorer(PATH_MODELS, '*.py')
+        names = explorer(path=PATH_MODELS,
+                         ext='*.py',
+                         exclude=('__init__.py', 'student.py'))
         print('Список файлов c моделями:', names, sep='\n', flush=True)
 
         if files := input('Выберите один или несколько файлов: '):
@@ -34,20 +36,17 @@ def main():
                     name=f'ml.models.{name}',
                     globals=globals(),
                     locals=locals(),
-                    fromlist=['title', 'model', 'params'],
+                    fromlist=['student'],
                     level=0
                 )
 
-                models.append(
-                    {
-                        'name': name,
-                        'title': modul.title,
-                        'model': modul.model,
-                        'params': modul.params,
-                    }
-                )
+                students[name] = getattr(modul, 'student')
 
-        train(folder=data, models=models)
+        train(
+            students=students,
+            folder=data,
+            n_trials=5
+        )
 
 
 if __name__ == '__main__':

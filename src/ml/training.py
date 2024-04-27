@@ -1,13 +1,15 @@
+import csv
 import json
 import os
-
+import optuna
 import joblib
+import optuna.logging
 import pandas as pd
 
 from sklearn.dummy import DummyClassifier
 from sklearn.metrics import f1_score
 from sklearn.metrics import make_scorer
-from sklearn.model_selection import GridSearchCV
+
 from sklearn.model_selection import ShuffleSplit
 from sklearn.model_selection import learning_curve
 from sklearn.model_selection import train_test_split
@@ -15,12 +17,9 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer
 from sklearn.preprocessing import MultiLabelBinarizer
 
-from config.ml import FIT_CV_SPLITTING_STRATEGY
-from config.ml import FIT_CV_VERBOSE
 from config.ml import LEARNING_CURVE_SPLITTING_STRATEGY_N_SPLITS
 from config.ml import LEARNING_CURVE_SPLITTING_STRATEGY_TEST_SIZE
 from config.ml import LEARNING_CURVE_SPLITTING_STRATEGY_TRAIN_SIZES
-from config.ml import LEARNING_CURVE_VERBOSE
 from config.ml import N_JOBS
 from config.ml import RANDOM_STATE
 from config.ml import TEST_SIZE
@@ -31,6 +30,12 @@ from utils import plot
 from utils.ml.preprocessing import cleaning
 from utils.ml.preprocessing import lemmatization
 from utils.ml.preprocessing import stopwords
+
+from ml.models.student import Student
+from utils.ml.verbose import Verbose
+from optuna.samplers import TPESampler
+
+optuna.logging.set_verbosity(optuna.logging.WARNING)
 
 
 def insert(key: int, values: pd.Series) -> list:
@@ -49,12 +54,18 @@ def insert(key: int, values: pd.Series) -> list:
         return []
 
 
-def train(folder: str, models: list) -> None:
+def train(students: dict[str: Student],
+          folder: str,
+          n_trials: int = 10,
+          n_jobs: int = 1) -> None:
     """
     Обучает модели;
 
+    :param students: словарь моделей;
     :param folder: директория с предварительно обработанными данными;
-    :param models: список с параметрами тренируемых моделей;
+    :param n_trials: количество испытаний;
+    :param n_jobs: количество ядер процессора,
+    задействованных в подборе гипперпараметров;
     :return: None.
     """
 
@@ -132,12 +143,26 @@ def train(folder: str, models: list) -> None:
         random_state=RANDOM_STATE
     )
 
-    for model in models:
-        name, title, model, params = (
-            model['name'],
-            model['title'],
-            model['model'],
-            model['params'],
+    verbose = Verbose(n_trials)
+
+    for name, student in students.items():
+        params = 1
+        for param in student.params.values():
+            params *= len(param[1])
+        print(f'{student.name}: {n_trials}/{params} ({n_trials / params:.2%}).')
+
+        student.x, student.y = x_train, y_train
+
+        study = optuna.create_study(
+            direction='maximize',
+            sampler=TPESampler()
+        )
+
+        study.optimize(
+            student,
+            n_trials=n_trials,
+            n_jobs=n_jobs,
+            callbacks=[verbose]
         )
 
         path = fr'{PATH_TRAIN_REPORT}\{name}'
@@ -173,36 +198,59 @@ def train(folder: str, models: list) -> None:
             zero_division=0.0
         )
 
-        # Обучение модели.
-        clf = GridSearchCV(
-            estimator=model,
-            param_grid=params,
-            scoring=f1_weighted,
-            cv=FIT_CV_SPLITTING_STRATEGY,
-            verbose=FIT_CV_VERBOSE,
-            refit=True
-        )
-        clf.fit(x_train, y_train)
-
-        # Сохранение результатов кросс-валидации.
-        (pd.DataFrame(data=clf.cv_results_)
-         .sort_values('rank_test_score')
-         .round(5)
-         .to_csv(
-            path_or_buf=rf'{path}\cv_results.csv',
-            sep=',',
-            index=False
-        ))
-
         # Сохранение лучших гиперпараметров.
-        with open(rf'{path}\best_params.json', 'w') as f:
-            f.write(json.dumps(clf.best_params_, sort_keys=True, indent=4))
+        with open(rf'{path}\params.json', 'w') as f:
+            f.write(json.dumps(
+                study.best_params,
+                sort_keys=True,
+                indent=4)
+            )
+
+        # Сохранение результатов всех испытаний.
+        trials = [[
+            'index',
+            'state',
+            'start',
+            'complete'
+        ]]
+        trials += [student.params.keys()] + ['values']
+        for trial in study.trials:
+            index = trial.number + 1
+            state = trial.state.name
+            start = (trial
+                     .datetime_start
+                     .strftime('%d-%m-%Y %H:%M:%S'))
+            complete = (trial
+                        .datetime_complete
+                        .strftime('%d-%m-%Y %H:%M:%S'))
+            params = trial.params.values()
+            params = [round(p, 4) if isinstance(p, (int, float)) else p
+                      for p in params]
+            value = round(trial.values[0], 4)
+
+            trials.append([
+                index,
+                state,
+                start,
+                complete
+            ])
+
+            trials[-1] += [*params] + [value]
+
+        with open(fr'{path}\trials.csv', 'w',
+                  newline='',
+                  encoding='utf-8') as f:
+            writer = csv.writer(f, delimiter=',')
+            writer.writerows(trials)
+
+        model = student.model.set_params(**study.best_params)
+        model.fit(x_train, y_train)
 
         # Оценка масштабируемости.
         (train_sizes,
          train_scores, test_scores,
          fit_times, score_times) = learning_curve(
-            estimator=clf.best_estimator_,
+            estimator=model,
             X=x_train,
             y=y_train,
             train_sizes=LEARNING_CURVE_SPLITTING_STRATEGY_TRAIN_SIZES,
@@ -214,7 +262,7 @@ def train(folder: str, models: list) -> None:
             n_jobs=N_JOBS,
             scoring=f1_weighted,
             return_times=True,
-            verbose=LEARNING_CURVE_VERBOSE
+            verbose=0
         )
 
         x_train_size = x_train.shape[0]
@@ -225,13 +273,12 @@ def train(folder: str, models: list) -> None:
             test_scores=pd.DataFrame(test_scores),
             fit_times=pd.DataFrame(fit_times),
             score_times=pd.DataFrame(score_times),
-            title=f'Масштабируемость {title}',
+            title=f'Масштабируемость модели {student.name}',
             path=fr'{path}\images'
         )
 
-        # Проверка на тестовой выборке
-        predict = clf.predict(x_test)
-        predict_proba = clf.predict_proba(x_test)
+        predict = model.predict(x_test)
+        predict_proba = model.predict_proba(x_test)
 
         f1 = f1_score(
             y_true=y_test,
@@ -243,7 +290,7 @@ def train(folder: str, models: list) -> None:
             y_test=y_test,
             y_predict=pd.DataFrame(predict),
             y_train=y_train,
-            title=f'Результаты обучения {title} '
+            title=f'Результаты обучения модели {student.name} '
                   f'(F1-weighted: {f1:.4f}) на тестовой выборке',
             labels=labels,
             path=fr'{path}\images'
@@ -254,7 +301,7 @@ def train(folder: str, models: list) -> None:
             y_true=y_test,
             y_proba=[pd.DataFrame(x) for x in predict_proba],
             labels=labels,
-            title=f'График калиброванности {title}',
+            title=f'График калиброванности модели {student.name}',
             path=fr'{path}\images'
         )
 
@@ -276,7 +323,7 @@ def train(folder: str, models: list) -> None:
             y_test=y_test,
             y_predict=pd.DataFrame(predict),
             y_train=y_train,
-            title=f'Результаты обучения DummyClassifier (stratified) '
+            title=f'Результаты обучения простой эмпирической модели '
                   f'(F1-weighted: {f1:.4f}) на тестовой выборке',
             labels=labels,
             name='dummy',
@@ -290,12 +337,6 @@ def train(folder: str, models: list) -> None:
         # Сохранение меток.
         with open(fr'{path}\labels.json', 'w') as file:
             file.write(json.dumps(labels.tolist()))
-
-        model = Pipeline(
-            steps=[
-                ('preprocessor', preprocessor),
-                ('model', clf.best_estimator_)]
-        )
 
         # Сохранение модели в joblib-файл.
         joblib.dump(
