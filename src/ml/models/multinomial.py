@@ -3,7 +3,7 @@ import nltk
 from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.multioutput import MultiOutputClassifier
-from sklearn.naive_bayes import ComplementNB
+from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import f1_score
 from sklearn.metrics import make_scorer
@@ -27,7 +27,7 @@ standardizer = Pipeline(
     ]
 )
 
-estimator = ComplementNB(
+estimator = MultinomialNB(
     force_alpha=True
 )
 estimator = MultiOutputClassifier(
@@ -54,7 +54,7 @@ params = {
     'standardizer__vectorizer__max_df': ['float', {'low': 0.7,
                                                    'high': 1.0,
                                                    'step': 0.1}],
-    'estimator__estimator__norm': ['categorical', [True, False]],
+    'estimator__estimator__fit_prior': ['categorical', [True, False]],
     'estimator__estimator__alpha': ['float', {'low': 0.0,
                                               'high': 1.0,
                                               'step': 0.1}]
