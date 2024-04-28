@@ -1,7 +1,7 @@
 import os
 
 from config.paths import PATH_RAW_DATA
-from utils.data.preprocessing import preprocessing
+from utils.data import preprocessing
 from utils.explorer import explorer
 
 
