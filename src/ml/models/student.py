@@ -14,7 +14,7 @@ class Student(object):
                  model,
                  name: str,
                  params: dict,
-                 scorer: callable,
+                 metric: callable,
                  scoring: callable,
                  cv,
                  n_jobs: int = 1):
@@ -23,7 +23,7 @@ class Student(object):
         :param model: pipeline модели;
         :param model: название модели;
         :param params: пространство гиперпараметров;
-        :param scorer: функция оценки модели на тестовой выборке;
+        :param metric: функция оценки модели на тестовой выборке;
         :param scoring: функция оценки модели во время кросс валидации;
         :param cv: метод кросс валидации;
         :param n_jobs: количество ядер процессора,
@@ -33,7 +33,7 @@ class Student(object):
         self.model = model
         self.name: str = name
         self.params: dict = params
-        self.scorer: callable = scorer
+        self.metric: callable = metric
         self.scoring: callable = scoring
         self.cv = cv
         self.n_jobs: int = n_jobs

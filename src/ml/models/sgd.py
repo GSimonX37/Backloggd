@@ -55,17 +55,17 @@ params = {
                                                  'step': 2}],
     'standardizer__vectorizer__max_df': ['float', {'low': 0.7,
                                                    'high': 1.0,
-                                                   'step': 0.1}],
+                                                   'step': 0.05}],
     'estimator__estimator__alpha': ['float', {'low': 0.0,
                                               'high': 1.0,
-                                              'step': 0.1}],
+                                              'step': 0.05}],
     'estimator__estimator__class_weight': ['categorical', [None, 'balanced']],
     'estimator__estimator__l1_ratio': ['float', {'low': 1.0,
                                                  'high': 1.0,
-                                                 'step': 0.1}]
+                                                 'step': 0.05}]
 }
 
-scorer = make_scorer(
+scoring = make_scorer(
     score_func=f1_score,
     average='weighted',
     zero_division=0.0
@@ -75,7 +75,7 @@ student = Student(
     model=model,
     name='SGDClassifier',
     params=params,
-    scorer=lambda x, y: f1_score(x, y, average='weighted'),
-    scoring=scorer,
+    metric=lambda x, y: f1_score(x, y, average='weighted'),
+    scoring=scoring,
     cv=2
 )
