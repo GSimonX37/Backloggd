@@ -5,9 +5,6 @@ from .preparation import length
 from .preparation import letters
 from .lemmatization import lemmatize
 
-from src.config.paths import PATH_PREPROCESSED_DATA
-from src.config.paths import PATH_RAW_DATA
-
 
 def insert(key: int, values: pd.Series) -> list:
     if key in values.index:
@@ -17,9 +14,9 @@ def insert(key: int, values: pd.Series) -> list:
         return []
 
 
-def preprocessing(folder: str) -> None:
-    games = pd.read_csv(f'{PATH_RAW_DATA}/{folder}/games.csv')
-    genres = pd.read_csv(f'{PATH_RAW_DATA}/{folder}/genres.csv')
+def preprocessing(games: pd.DataFrame, genres: pd.DataFrame) -> pd.DataFrame:
+    games = games.copy()
+    genres = genres.copy()
 
     # Удаление явных дубликатов.
     games = games.drop_duplicates()
@@ -60,9 +57,4 @@ def preprocessing(folder: str) -> None:
     # Приведение текста к нижнему регистру.
     data['description'] = data['description'].str.lower()
 
-    # Сохранение предобработанных данных.
-    data.to_csv(
-        path_or_buf=fr'{PATH_PREPROCESSED_DATA}\{folder}.csv',
-        sep=',',
-        index=False
-    )
+    return data
