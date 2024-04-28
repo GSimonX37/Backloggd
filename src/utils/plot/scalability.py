@@ -109,7 +109,7 @@ def scalability(train_sizes: pd.Series,
             figure.axes[0].annotate(
                 text=value,
                 xy=(x, y),
-                xytext=(-10, 10 if t == 'Тестовые данные' else -15),
+                xytext=(-10, -15 if t == 'Тестовые данные' else 10),
                 textcoords='offset points',
                 fontsize=12
             )
