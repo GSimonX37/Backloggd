@@ -18,7 +18,7 @@ __pycache__/
 /notebooks/.ipynb_checkpoints/
 
 # файлы данных.
-/data/processed/**/
+/data/processed/*.csv
 /data/raw/**/
 
 # Файлы конрольной точки.
