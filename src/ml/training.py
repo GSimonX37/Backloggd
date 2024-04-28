@@ -5,16 +5,12 @@ import optuna
 import joblib
 import optuna.logging
 import pandas as pd
-
+import nltk
 from sklearn.dummy import DummyClassifier
-from sklearn.metrics import f1_score
-from sklearn.metrics import make_scorer
-
+from ast import literal_eval
 from sklearn.model_selection import ShuffleSplit
 from sklearn.model_selection import learning_curve
 from sklearn.model_selection import train_test_split
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import FunctionTransformer
 from sklearn.preprocessing import MultiLabelBinarizer
 
 from config.ml import LEARNING_CURVE_N_SPLITS
@@ -23,111 +19,38 @@ from config.ml import LEARNING_CURVE_TRAIN_SIZES
 from config.ml import N_JOBS
 from config.ml import RANDOM_STATE
 from config.ml import TEST_SIZE
-from config.paths import PATH_PREPROCESSED_DATA
 from config.paths import PATH_TRAIN_REPORT
 from config.paths import PATH_TRAINED_MODELS
 from utils import plot
-from utils.ml.preprocessing import cleaning
-from utils.ml.preprocessing import lemmatization
-from utils.ml.preprocessing import stopwords
-
+from nltk.corpus import stopwords
 from ml.models.student import Student
 from utils.ml.verbose import Verbose
 from optuna.samplers import TPESampler
 
 optuna.logging.set_verbosity(optuna.logging.WARNING)
-
-
-def insert(key: int, values: pd.Series) -> list:
-    """
-    Группирует значения по ключу в список;
-
-    :param key: ключ, по которому группируются значения;
-    :param values: значения;
-    :return: список значений.
-    """
-
-    if key in values.index:
-        value = values[key]
-        return [value] if isinstance(value, str) else value.to_list()
-    else:
-        return []
+nltk.download('stopwords')
 
 
 def train(students: dict[str: Student],
-          folder: str,
+          data: pd.DataFrame,
           n_trials: int = 10,
           n_jobs: int = 1) -> None:
     """
     Обучает модели;
 
     :param students: словарь моделей;
-    :param folder: директория с предварительно обработанными данными;
+    :param data: набор данных;
     :param n_trials: количество испытаний;
     :param n_jobs: количество ядер процессора,
     задействованных в подборе гипперпараметров;
     :return: None.
     """
 
-    file_paths = {
-        'games': f'{PATH_PREPROCESSED_DATA}/{folder}/games.csv',
-        'genres': f'{PATH_PREPROCESSED_DATA}/{folder}/genres.csv',
-    }
-
-    df = {file: pd.read_csv(path) for file, path in file_paths.items()}
-
-    # Отбор описаний видеоигр.
-    data = df['games'].loc[:, ['id', 'description']].copy()
-
-    # Удаление записей без описания.
-    data = (data
-            .loc[data['description'].notna(), :]
-            .reset_index(drop=True))
-
-    # Отбор записей только с ascii-символами.
-    data = (data
-            .loc[data['description'].apply(lambda s: s.isascii()), :]
-            .reset_index(drop=True))
-
-    # Отбор 20 самых популярных жанров.
-    genres = df['genres']['genre'].value_counts().index[:20]
-    genres = (df['genres']
-              .loc[df['genres']['genre'].isin(genres), :]
-              .set_index('id'))['genre']
-
-    # Объединение данных.
-    data.insert(
-            loc=data.shape[1],
-            column='genres',
-            value=data['id'].apply(insert, values=genres)
-    )
-    data = data.drop('id', axis=1)
-
-    data = (data
-            .loc[data['genres'].map(bool), :]
-            .reset_index(drop=True))
-
-    # Создание препроцессора.
-    cleaner = FunctionTransformer(cleaning)
-    lemmatizer = FunctionTransformer(lemmatization)
-    preprocessor = Pipeline(
-        steps=[
-            ('cleaner', cleaner),
-            ('lemmatizer', lemmatizer)
-        ]
-    )
-
-    # Очистка и лемматизация текста
-    data['description'] = preprocessor.fit_transform(data['description'])
-
-    # Отбор записей, описание которых не состоит только из пробельных символов.
-    data = (data
-            .loc[~data['description'].apply(lambda s: s.isspace()), :]
-            .reset_index(drop=True))
-
     # Разделение на признаки.
     x = data['description']
     y = data['genres']
+
+    y = y.apply(literal_eval)
 
     encoder = MultiLabelBinarizer()
     encoder.fit(y)
@@ -143,8 +66,6 @@ def train(students: dict[str: Student],
         random_state=RANDOM_STATE
     )
 
-    verbose = Verbose(n_trials)
-
     for name, student in students.items():
         params = 1
         for param in student.params.values():
@@ -157,6 +78,8 @@ def train(students: dict[str: Student],
             direction='maximize',
             sampler=TPESampler()
         )
+
+        verbose = Verbose(n_trials, student.name)
 
         study.optimize(
             student,
@@ -179,7 +102,7 @@ def train(students: dict[str: Student],
                 axis=1
             ),
             labels=labels,
-            stop_words=stopwords,
+            stop_words=stopwords.words('english'),
             path=fr'{path}\images'
         )
 
@@ -191,17 +114,10 @@ def train(students: dict[str: Student],
             path=fr'{path}\images'
         )
 
-        # Метрика оценки классификатора.
-        f1_weighted = make_scorer(
-            score_func=f1_score,
-            average='weighted',
-            zero_division=0.0
-        )
-
         # Сохранение лучших гиперпараметров.
         with open(rf'{path}\params.json', 'w') as f:
             f.write(json.dumps(
-                study.best_params,
+                obj=study.best_params,
                 sort_keys=True,
                 indent=4)
             )
@@ -260,7 +176,7 @@ def train(students: dict[str: Student],
                 random_state=RANDOM_STATE
             ),
             n_jobs=N_JOBS,
-            scoring=f1_weighted,
+            scoring=student.scoring,
             return_times=True,
             verbose=0
         )
@@ -280,18 +196,14 @@ def train(students: dict[str: Student],
         predict = model.predict(x_test)
         predict_proba = model.predict_proba(x_test)
 
-        f1 = f1_score(
-            y_true=y_test,
-            y_pred=predict,
-            average='weighted'
-        )
+        metric = student.metric(y_test, predict)
 
         plot.metrics(
             y_test=y_test,
             y_predict=pd.DataFrame(predict),
             y_train=y_train,
             title=f'Результаты обучения модели {student.name} '
-                  f'(F1-weighted: {f1:.4f}) на тестовой выборке',
+                  f'(F1-weighted: {metric:.4f}) на тестовой выборке',
             labels=labels,
             path=fr'{path}\images'
         )
@@ -307,25 +219,21 @@ def train(students: dict[str: Student],
 
         # Сравнение с простым классификатором.
         dummy_clf = DummyClassifier(
-                strategy='stratified',
-                random_state=RANDOM_STATE
+            strategy='stratified',
+            random_state=RANDOM_STATE
         )
         dummy_clf.fit(x_train, y_train)
 
         predict = pd.DataFrame(dummy_clf.predict(x_test))
 
-        f1 = f1_score(
-            y_true=y_test,
-            y_pred=predict,
-            average='weighted'
-        )
+        metric = student.metric(y_test, predict)
 
         plot.metrics(
             y_test=y_test,
             y_predict=pd.DataFrame(predict),
             y_train=y_train,
             title=f'Результаты обучения простой эмпирической модели '
-                  f'(F1-weighted: {f1:.4f}) на тестовой выборке',
+                  f'(F1-weighted: {metric:.4f}) на тестовой выборке',
             labels=labels,
             name='dummy',
             path=fr'{path}\images'
@@ -337,7 +245,11 @@ def train(students: dict[str: Student],
 
         # Сохранение меток.
         with open(fr'{path}\labels.json', 'w') as file:
-            file.write(json.dumps(labels.tolist()))
+            file.write(json.dumps(
+                obj={c: l for c, l in labels.items()},
+                sort_keys=True,
+                indent=4)
+            )
 
         # Сохранение модели в joblib-файл.
         joblib.dump(

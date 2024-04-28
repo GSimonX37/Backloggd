@@ -1,5 +1,5 @@
 import os
-
+import pandas as pd
 from config.paths import PATH_MODELS
 from config.paths import PATH_PREPROCESSED_DATA
 from ml.training import train
@@ -13,13 +13,15 @@ def main():
     :return: None.
     """
 
-    names = explorer(PATH_PREPROCESSED_DATA)
+    names = explorer(PATH_PREPROCESSED_DATA, ext='*.csv')
     os.system('cls')
     print('Список предварительно обработанных данных:', names,
           sep='\n',
           flush=True)
 
-    if data := input('Выберите данные: '):
+    if name := input('Выберите данные: '):
+        data = pd.read_csv(f'{PATH_PREPROCESSED_DATA}/{name}')
+
         students = {}
 
         print(flush=True)
@@ -44,8 +46,8 @@ def main():
 
         train(
             students=students,
-            folder=data,
-            n_trials=5
+            data=data,
+            n_trials=2
         )
 
 
