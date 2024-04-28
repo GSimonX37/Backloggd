@@ -3,8 +3,9 @@ from optuna.trial import FrozenTrial
 
 
 class Verbose(object):
-    def __init__(self, trials: int):
+    def __init__(self, trials: int, name: str):
         self.trials = trials
+        self.name = name
 
     def __call__(self, study: Study, trial: FrozenTrial):
         index = trial.number + 1
@@ -18,5 +19,5 @@ class Verbose(object):
         value = round(trial.values[0], 4)
         best = round(study.best_value, 4)
 
-        print(f'[{complete}] - [{minutes:02}:{seconds:02}] - '
+        print(f'{self.name}: [{complete}] - [{minutes:02}:{seconds:02}] - '
               f'{state}: {index}/{self.trials} - {value:.4f} ({best:.4f}).')
