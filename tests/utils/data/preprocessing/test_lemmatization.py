@@ -1,6 +1,6 @@
 import pytest
 
-from utils.data.preprocessing.lemmatization import lemmatize
+from src.utils.data.preprocessing.lemmatization import lemmatize
 
 
 @pytest.mark.parametrize(

@@ -1,8 +1,8 @@
 import pytest
 
-from utils.data.preprocessing.preparation import spaces
-from utils.data.preprocessing.preparation import length
-from utils.data.preprocessing.preparation import letters
+from src.utils.data.preprocessing.preparation import spaces
+from src.utils.data.preprocessing.preparation import length
+from src.utils.data.preprocessing.preparation import letters
 
 
 @pytest.mark.parametrize(

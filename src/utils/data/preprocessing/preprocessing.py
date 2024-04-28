@@ -5,8 +5,8 @@ from .preparation import length
 from .preparation import letters
 from .lemmatization import lemmatize
 
-from config.paths import PATH_PREPROCESSED_DATA
-from config.paths import PATH_RAW_DATA
+from src.config.paths import PATH_PREPROCESSED_DATA
+from src.config.paths import PATH_RAW_DATA
 
 
 def insert(key: int, values: pd.Series) -> list:
