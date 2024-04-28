@@ -1,8 +1,9 @@
-from nltk.stem import WordNetLemmatizer
+from functools import cache
+
 from nltk import pos_tag
 from nltk.corpus import wordnet
+from nltk.stem import WordNetLemmatizer
 
-from functools import cache
 
 lemmatizer = WordNetLemmatizer()
 

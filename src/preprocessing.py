@@ -1,11 +1,11 @@
 import os
+
 import pandas as pd
 
+from config.paths import PATH_PREPROCESSED_DATA
+from config.paths import PATH_RAW_DATA
 from utils.data import preprocessing
 from utils.explorer import explorer
-
-from config.paths import PATH_RAW_DATA
-from config.paths import PATH_PREPROCESSED_DATA
 
 
 def insert(key: int, values: pd.Series) -> list:

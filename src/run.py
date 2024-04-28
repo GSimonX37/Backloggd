@@ -1,4 +1,5 @@
 import sys
+
 import uvicorn
 
 from app.application import model

@@ -1,10 +1,10 @@
 from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics import f1_score
+from sklearn.metrics import make_scorer
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.naive_bayes import ComplementNB
 from sklearn.pipeline import Pipeline
-from sklearn.metrics import f1_score
-from sklearn.metrics import make_scorer
 
 from .student import Student
 

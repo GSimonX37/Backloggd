@@ -3,10 +3,10 @@ import nltk
 from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import SGDClassifier
-from sklearn.multioutput import MultiOutputClassifier
-from sklearn.pipeline import Pipeline
 from sklearn.metrics import f1_score
 from sklearn.metrics import make_scorer
+from sklearn.multioutput import MultiOutputClassifier
+from sklearn.pipeline import Pipeline
 
 from .student import Student
 

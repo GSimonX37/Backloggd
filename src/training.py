@@ -1,5 +1,7 @@
 import os
+
 import pandas as pd
+
 from config.paths import PATH_MODELS
 from config.paths import PATH_PREPROCESSED_DATA
 from ml.training import train
@@ -42,7 +44,7 @@ def main():
                     level=0
                 )
 
-                students[name] = getattr(modul, 'student')
+                students[name] = modul.student
 
         train(
             students=students,

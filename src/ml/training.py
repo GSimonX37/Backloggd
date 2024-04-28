@@ -1,13 +1,17 @@
+import ast
 import csv
 import json
 import os
-import optuna
+
 import joblib
+import nltk
+import optuna
 import optuna.logging
 import pandas as pd
-import nltk
+
+from nltk.corpus import stopwords
+from optuna.samplers import TPESampler
 from sklearn.dummy import DummyClassifier
-from ast import literal_eval
 from sklearn.model_selection import ShuffleSplit
 from sklearn.model_selection import learning_curve
 from sklearn.model_selection import train_test_split
@@ -21,11 +25,10 @@ from config.ml import RANDOM_STATE
 from config.ml import TEST_SIZE
 from config.paths import PATH_TRAIN_REPORT
 from config.paths import PATH_TRAINED_MODELS
-from utils import plot
-from nltk.corpus import stopwords
 from ml.models.student import Student
+from utils import plot
 from utils.ml.verbose import Verbose
-from optuna.samplers import TPESampler
+
 
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 nltk.download('stopwords')
@@ -50,7 +53,7 @@ def train(students: dict[str: Student],
     x = data['description']
     y = data['genres']
 
-    y = y.apply(literal_eval)
+    y = y.apply(ast.literal_eval)
 
     encoder = MultiLabelBinarizer()
     encoder.fit(y)
@@ -246,7 +249,7 @@ def train(students: dict[str: Student],
         # Сохранение меток.
         with open(fr'{path}\labels.json', 'w') as file:
             file.write(json.dumps(
-                obj={c: l for c, l in labels.items()},
+                obj={code: label for code, label in labels.items()},
                 sort_keys=True,
                 indent=4)
             )
