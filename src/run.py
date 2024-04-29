@@ -12,10 +12,10 @@ def main() -> None:
     :return: None.
     """
 
-    directory = sys.argv[1]
+    name = sys.argv[1]
 
-    file = rf'/models/{directory}/{directory}.joblib'
-    labels = rf'/models/{directory}/labels.json'
+    file = rf'/models/{name}/{name}.joblib'
+    labels = rf'/models/{name}/labels.json'
 
     model.load(file, labels)
 
