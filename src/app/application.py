@@ -5,8 +5,7 @@ from fastapi import Request
 from fastapi import Response
 
 from app.model import Model
-from utils.ml.preprocessing import cleaning
-from utils.ml.preprocessing import lemmatization
+from utils.data import preprocess
 
 
 model = Model()
@@ -46,8 +45,7 @@ async def send_response(request: Request) -> Response:
         name='description'
     )
 
-    description = cleaning(description)
-    description = lemmatization(description)
+    description = preprocess(description)
 
     genres = model.result(
         description=description,

@@ -15,7 +15,7 @@ class Model(object):
 
     def __init__(self):
         self.model = None
-        self.labels: list | None = None
+        self.labels: dict | None = None
 
     def load(self, model: str, labels: str) -> None:
         """
@@ -45,7 +45,7 @@ class Model(object):
         predict_proba = [proba[0, 1] for proba in predict_proba]
 
         genres = {}
-        for label, proba in zip(self.labels, predict_proba):
+        for label, proba in zip(self.labels.values(), predict_proba):
             if proba >= threshold:
                 genres[label] = proba
 
