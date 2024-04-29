@@ -25,7 +25,7 @@ from config.ml import RANDOM_STATE
 from config.ml import TEST_SIZE
 from config.paths import PATH_TRAIN_REPORT
 from config.paths import PATH_TRAINED_MODELS
-from ml.students.student import Student
+from ml.models.model import Model
 from utils import plot
 from utils.ml.verbose import Verbose
 
@@ -34,14 +34,14 @@ optuna.logging.set_verbosity(optuna.logging.WARNING)
 nltk.download('stopwords')
 
 
-def train(students: dict[str: Student],
+def train(models: dict[str: Model],
           data: pd.DataFrame,
           n_trials: int = 10,
           n_jobs: int = 1) -> None:
     """
     Обучает модели;
 
-    :param students: словарь моделей;
+    :param models: словарь моделей;
     :param data: набор данных;
     :param n_trials: количество испытаний;
     :param n_jobs: количество ядер процессора,
@@ -69,23 +69,23 @@ def train(students: dict[str: Student],
         random_state=RANDOM_STATE
     )
 
-    for name, student in students.items():
+    for name, model in models.items():
         params = 1
-        for param in student.params.values():
+        for param in model.params.values():
             params *= len(param[1])
-        print(f'{student.name}: {n_trials}/{params} ({n_trials / params:.2%}).')
+        print(f'{model.name}: {n_trials}/{params} ({n_trials / params:.2%}).')
 
-        student.x, student.y = x_train, y_train
+        model.x, model.y = x_train, y_train
 
         study = optuna.create_study(
             direction='maximize',
             sampler=TPESampler()
         )
 
-        verbose = Verbose(n_trials, student.name)
+        verbose = Verbose(n_trials, model.name)
 
         study.optimize(
-            student,
+            model,
             n_trials=n_trials,
             n_jobs=n_jobs,
             callbacks=[verbose]
@@ -132,7 +132,7 @@ def train(students: dict[str: Student],
             'start',
             'complete'
         ]]
-        trials += [student.params.keys()] + ['values']
+        trials += [model.params.keys()] + ['values']
         for trial in study.trials:
             index = trial.number + 1
             state = trial.state.name
@@ -162,8 +162,8 @@ def train(students: dict[str: Student],
             writer = csv.writer(f, delimiter=',')
             writer.writerows(trials)
 
-        model = student.model.set_params(**study.best_params)
-        model.fit(x_train, y_train)
+        pipeline = model.pipeline.set_params(**study.best_params)
+        pipeline.fit(x_train, y_train)
 
         # Оценка масштабируемости.
         (train_sizes,
@@ -179,7 +179,7 @@ def train(students: dict[str: Student],
                 random_state=RANDOM_STATE
             ),
             n_jobs=N_JOBS,
-            scoring=student.scoring,
+            scoring=model.scoring,
             return_times=True,
             verbose=0
         )
@@ -192,20 +192,20 @@ def train(students: dict[str: Student],
             test_scores=pd.DataFrame(test_scores),
             fit_times=pd.DataFrame(fit_times),
             score_times=pd.DataFrame(score_times),
-            title=f'Масштабируемость модели {student.name}',
+            title=f'Масштабируемость модели {model.name}',
             path=fr'{path}\images'
         )
 
-        predict = model.predict(x_test)
-        predict_proba = model.predict_proba(x_test)
+        predict = pipeline.predict(x_test)
+        predict_proba = pipeline.predict_proba(x_test)
 
-        metric = student.metric(y_test, predict)
+        metric = model.metric(y_test, predict)
 
         plot.metrics(
             y_test=y_test,
             y_predict=pd.DataFrame(predict),
             y_train=y_train,
-            title=f'Результаты обучения модели {student.name} '
+            title=f'Результаты обучения модели {model.name} '
                   f'(F1-weighted: {metric:.4f}) на тестовой выборке',
             labels=labels,
             path=fr'{path}\images'
@@ -216,20 +216,20 @@ def train(students: dict[str: Student],
             y_true=y_test,
             y_proba=[pd.DataFrame(x) for x in predict_proba],
             labels=labels,
-            title=f'График калиброванности модели {student.name}',
+            title=f'График калиброванности модели {model.name}',
             path=fr'{path}\images'
         )
 
         # Сравнение с простым классификатором.
-        dummy_clf = DummyClassifier(
+        dummy = DummyClassifier(
             strategy='stratified',
             random_state=RANDOM_STATE
         )
-        dummy_clf.fit(x_train, y_train)
+        dummy.fit(x_train, y_train)
 
-        predict = pd.DataFrame(dummy_clf.predict(x_test))
+        predict = pd.DataFrame(dummy.predict(x_test))
 
-        metric = student.metric(y_test, predict)
+        metric = model.metric(y_test, predict)
 
         plot.metrics(
             y_test=y_test,
@@ -256,6 +256,6 @@ def train(students: dict[str: Student],
 
         # Сохранение модели в joblib-файл.
         joblib.dump(
-            value=model,
+            value=pipeline,
             filename=rf'{path}\{name}.joblib'
         )

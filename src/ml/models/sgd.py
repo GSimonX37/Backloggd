@@ -6,7 +6,7 @@ from sklearn.metrics import make_scorer
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.pipeline import Pipeline
 
-from .student import Student
+from .model import Model
 
 
 vectorizer = TfidfVectorizer(
@@ -33,7 +33,7 @@ estimator = MultiOutputClassifier(
     n_jobs=4
 )
 
-model = Pipeline(
+pipeline = Pipeline(
     steps=[
         ('standardizer', standardizer),
         ('estimator', estimator)
@@ -67,8 +67,8 @@ scoring = make_scorer(
     zero_division=0.0
 )
 
-student = Student(
-    model=model,
+pipeline = Model(
+    pipeline=pipeline,
     name='SGDClassifier',
     params=params,
     metric=lambda x, y: f1_score(x, y, average='weighted'),

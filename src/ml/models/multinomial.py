@@ -3,10 +3,10 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics import f1_score
 from sklearn.metrics import make_scorer
 from sklearn.multioutput import MultiOutputClassifier
-from sklearn.naive_bayes import ComplementNB
+from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import Pipeline
 
-from .student import Student
+from .model import Model
 
 
 vectorizer = TfidfVectorizer(
@@ -21,7 +21,7 @@ standardizer = Pipeline(
     ]
 )
 
-estimator = ComplementNB(
+estimator = MultinomialNB(
     force_alpha=True
 )
 estimator = MultiOutputClassifier(
@@ -29,7 +29,7 @@ estimator = MultiOutputClassifier(
     n_jobs=4
 )
 
-model = Pipeline(
+pipeline = Pipeline(
     steps=[
         ('standardizer', standardizer),
         ('estimator', estimator)
@@ -48,7 +48,7 @@ params = {
     'standardizer__vectorizer__max_df': ['float', {'low': 0.7,
                                                    'high': 1.0,
                                                    'step': 0.05}],
-    'estimator__estimator__norm': ['categorical', [True, False]],
+    'estimator__estimator__fit_prior': ['categorical', [True, False]],
     'estimator__estimator__alpha': ['float', {'low': 0.1,
                                               'high': 1.0,
                                               'step': 0.05}]
@@ -60,9 +60,9 @@ scoring = make_scorer(
     zero_division=0.0
 )
 
-student = Student(
-    model=model,
-    name='ComplementNB',
+pipeline = Model(
+    pipeline=pipeline,
+    name='MultinomialNB',
     params=params,
     metric=lambda x, y: f1_score(x, y, average='weighted'),
     scoring=scoring,

@@ -35,7 +35,7 @@ def main():
         print(flush=True)
         names = explorer(path=PATH_MODELS,
                          ext='*.py',
-                         exclude=('__init__.py', 'student.py'))
+                         exclude=('__init__.py', 'model.py'))
         print('Список файлов c моделями:', names, sep='\n', flush=True)
 
         if files := input('Выберите один или несколько файлов: '):
@@ -43,7 +43,7 @@ def main():
                 name = file.split('.')[0]
 
                 modul = __import__(
-                    name=f'ml.students.{name}',
+                    name=f'ml.models.{name}',
                     globals=globals(),
                     locals=locals(),
                     fromlist=['student'],
@@ -78,7 +78,7 @@ if __name__ == '__main__':
 
 ![models](../resources/training/models.jpg)
 
-Все модели должны располагаться в каталоге [students](../src/ml/students), 
+Все модели должны располагаться в каталоге [students](../src/ml/models), 
 с расширением `*.py` и содержать экземпляр класса `Student` 
 в котором содержатся:
 1. model: pipeline модели;

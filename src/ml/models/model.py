@@ -5,13 +5,13 @@ from optuna import Trial
 from sklearn.model_selection import cross_validate
 
 
-class Student(object):
+class Model(object):
     """
     Класс для подбора гипперпараметров с помощью Optuna.
     """
 
     def __init__(self,
-                 model,
+                 pipeline,
                  name: str,
                  params: dict,
                  metric: callable,
@@ -20,7 +20,7 @@ class Student(object):
                  n_jobs: int = 1):
 
         """
-        :param model: pipeline модели;
+        :param pipeline: pipeline модели;
         :param name: название модели;
         :param params: пространство гиперпараметров;
         :param metric: функция оценки модели на тестовой выборке;
@@ -30,7 +30,7 @@ class Student(object):
         задействованных на кросс валидации;
         """
 
-        self.model = model
+        self.pipeline = pipeline
         self.name: str = name
         self.params: dict = params
         self.metric: callable = metric
@@ -60,10 +60,10 @@ class Student(object):
                 params[name] = trial.suggest_categorical(name, values)
 
         # Инициализация модели.
-        model = self.model.set_params(**params)
+        pipeline = self.pipeline.set_params(**params)
 
         results: np.ndarray = cross_validate(
-            estimator=model,
+            estimator=pipeline,
             X=self.x,
             y=self.y,
             scoring=self.scoring,

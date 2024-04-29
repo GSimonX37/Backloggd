@@ -24,12 +24,12 @@ def main():
     if name := input('Выберите данные: '):
         data = pd.read_csv(f'{PATH_PREPROCESSED_DATA}/{name}')
 
-        students = {}
+        models = {}
 
         print(flush=True)
         names = explorer(path=PATH_MODELS,
                          ext='*.py',
-                         exclude=('__init__.py', 'student.py'))
+                         exclude=('__init__.py', 'model.py'))
         print('Список файлов c моделями:', names, sep='\n', flush=True)
 
         if files := input('Выберите один или несколько файлов: '):
@@ -44,10 +44,10 @@ def main():
                     level=0
                 )
 
-                students[name] = modul.student
+                models[name] = modul.model
 
         train(
-            students=students,
+            models=models,
             data=data,
             n_trials=250
         )
