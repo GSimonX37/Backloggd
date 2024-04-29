@@ -1,12 +1,12 @@
 import pandas as pd
 
 from .lemmatization import lemmatize
-from .preparation import length
-from .preparation import letters
-from .preparation import spaces
+from .cleaning import length
+from .cleaning import letters
+from .cleaning import spaces
 
 
-def preprocessing(data: pd.Series) -> pd.Series:
+def preprocess(data: pd.Series) -> pd.Series:
     # Очистка текста
     data = data.apply(letters)
     data = data.apply(length, size=2)
@@ -14,6 +14,9 @@ def preprocessing(data: pd.Series) -> pd.Series:
 
     # Лемматизация текста.
     data = data.apply(lemmatize)
+
+    # Удаление записей, с длиной текста меньше 50 символов.
+    data = data[data.str.len() >= 50]
 
     # Приведение текста к нижнему регистру.
     data = data.str.lower()
