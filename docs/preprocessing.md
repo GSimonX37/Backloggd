@@ -1,50 +1,64 @@
 # Предварительная обработка данных
 
+Предварительная обработка данных необходима, чтобы сделать "сырые" данные
+пригодными для машинного обучения.
 Точка входа для предварительной обработки данных находится в файле 
 [preprocessing.py](../src/preprocessing.py):
 
 ```python
 import os
 
+import pandas as pd
+
+from config.paths import PATH_PREPROCESSED_DATA
 from config.paths import PATH_RAW_DATA
-from utils.data.preprocessing import preprocessing
+from utils.data import prepare
+from utils.data import preprocess
 from utils.explorer import explorer
 
 
 def main():
-  """
-  Тока входа предварительной обработки данных;
+    """
+    Тока входа предварительной обработки данных;
 
-  :return: None.
-  """
+    :return: None.
+    """
 
-  names = explorer(PATH_RAW_DATA, exclude=('checkpoints',))
-  os.system('cls')
-  print('Список необработанных данных:', names, sep='\n', flush=True)
+    names = explorer(PATH_RAW_DATA, exclude=('checkpoints', ))
+    os.system('cls')
+    print('Список необработанных данных:', names, sep='\n', flush=True)
 
-  if data := input('Выберите директорию: '):
-    preprocessing(data)
+    if name := input('Выберите данные: '):
+        games = pd.read_csv(f'{PATH_RAW_DATA}/{name}/games.csv')
+        genres = pd.read_csv(f'{PATH_RAW_DATA}/{name}/genres.csv')
+
+        # Подготовка к предварительно обработке данных.
+        data = prepare(games, genres)
+
+        # Предварительная обработка данных.
+        data['description'] = preprocess(data['description'])
+
+        # Сохранение предобработанных данных.
+        data.to_csv(
+            path_or_buf=fr'{PATH_PREPROCESSED_DATA}\{name}.csv',
+            sep=',',
+            index=False
+        )
 
 
 if __name__ == '__main__':
-  main()
+    main()
 ```
 
 На данном этапе:
-- удаляются явные дубликаты;
-- добавляется логическое поле **indie**;
-- удаляются значения **indie** из файла **genres**;
-- рассчитывает рейтинг на основе данных **scores**;
-- добавляется поле **votes**;
-- удаляются пустые записи;
-- изменяются типы данных;
-- удаляются неявные дубликаты;
-- удаляются записи с отрицательными значениями в полях: 
-    - **reviews**;
-    - **plays**;
-    - **playing**;
-    - **backlogs**;
-    - **wishlists**.
+1. Предварительная подготовка:
+    - удаляются явные дубликаты;
+    - удаляются значения "indie" из поля "genres";
+    - добавляются целевые переменные и отбираются необходимых данные;
+    - удаляются пропуски.
+2. Предварительная обработка:
+    - очистка текстовых данных;
+    - лемматизация текста.
 
 Чтобы начать процесс предварительной обработки данных, 
 необходимо запустить данный файл. Программа отобразит содержимое каталога 
@@ -55,12 +69,9 @@ if __name__ == '__main__':
 
 После предварительной обработки данных, 
 в каталоге [processed](../data/processed) появятся данные в формате `.csv`. 
-Название каталога будет совпадать с названием каталога в каталоге 
+Название файла будет совпадать с названием каталога в каталоге 
 [raw](../data/raw).
 
 >Обратите внимание, файлы из директории [raw](../data/raw) не удаляются.
-
->Изображения из каталога [raw](../data/raw) не копируются 
-> в каталог [processed](../data/processed) с целью экономии пространства.
 
 [К описанию проекта](../README.md)

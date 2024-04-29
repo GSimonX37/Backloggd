@@ -6,8 +6,10 @@
 ```python
 import os
 
-from config.paths import PATH_PREPROCESSED_DATA
+import pandas as pd
+
 from config.paths import PATH_MODELS
+from config.paths import PATH_PREPROCESSED_DATA
 from ml.training import train
 from utils.explorer import explorer
 
@@ -19,17 +21,21 @@ def main():
     :return: None.
     """
 
-    names = explorer(PATH_PREPROCESSED_DATA)
+    names = explorer(PATH_PREPROCESSED_DATA, ext='*.csv')
     os.system('cls')
     print('Список предварительно обработанных данных:', names,
           sep='\n',
           flush=True)
 
-    if data := input('Выберите данные: '):
-        models = []
+    if name := input('Выберите данные: '):
+        data = pd.read_csv(f'{PATH_PREPROCESSED_DATA}/{name}')
+
+        students = {}
 
         print(flush=True)
-        names = explorer(PATH_MODELS, '*.py')
+        names = explorer(path=PATH_MODELS,
+                         ext='*.py',
+                         exclude=('__init__.py', 'student.py'))
         print('Список файлов c моделями:', names, sep='\n', flush=True)
 
         if files := input('Выберите один или несколько файлов: '):
@@ -37,23 +43,20 @@ def main():
                 name = file.split('.')[0]
 
                 modul = __import__(
-                    name=f'ml.models.{name}',
+                    name=f'ml.students.{name}',
                     globals=globals(),
                     locals=locals(),
-                    fromlist=['title', 'model', 'params'],
+                    fromlist=['student'],
                     level=0
                 )
 
-                models.append(
-                    {
-                        'name': name,
-                        'title': modul.title,
-                        'model': modul.model,
-                        'params': modul.params,
-                    }
-                )
+                students[name] = modul.student
 
-        train(folder=data, models=models)
+        train(
+            students=students,
+            data=data,
+            n_trials=250
+        )
 
 
 if __name__ == '__main__':
@@ -65,7 +68,7 @@ if __name__ == '__main__':
 Чтобы начать процесс тренировки моделей, необходимо запустить данный файл. 
 Программа отобразит содержимое каталога [processed](../data/processed), 
 где хранятся файлы, сформированные на этапе предварительной обработки данных 
-(см. [Предварительная обработка данных](preprocessing.md)). Необходимо выбрать каталог 
+(см. [Предварительная обработка данных](preprocessing.md)). Необходимо выбрать файл 
 с данными, на которых модель будет обучаться.
 
 ![file](../resources/training/file.jpg)
@@ -75,25 +78,33 @@ if __name__ == '__main__':
 
 ![models](../resources/training/models.jpg)
 
-Все модели должны располагаться в каталоге [models](../src/ml/models), 
-с расширением `*.py` и иметь следующее содержимое:
-1. title - заголовок, который будет использован при построении отчетов.
-2. model - модель машинного обучения.
-3. params - гиперпараметры модели.
+Все модели должны располагаться в каталоге [students](../src/ml/students), 
+с расширением `*.py` и содержать экземпляр класса `Student` 
+в котором содержатся:
+1. model: pipeline модели;
+2. name: название модели, которое будет отображаться на графиках;
+3. params: пространство гиперпараметров, подбор которых будет осуществляться 
+с помощью пакета [Optuna](https://optuna.org).
+4. metric: функция оценки модели на тестовой выборке.
+5. scoring: функция оценки модели во время кросс валидации.
+6. cv: метод кросс валидации.
 
 ```python
-import numpy as np
-
+from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.linear_model import SGDClassifier
+from sklearn.metrics import f1_score
+from sklearn.metrics import make_scorer
 from sklearn.multioutput import MultiOutputClassifier
+from sklearn.naive_bayes import ComplementNB
 from sklearn.pipeline import Pipeline
 
+from .student import Student
 
-title = 'SGDClassifier'
 
 vectorizer = TfidfVectorizer(
-    analyzer='word'
+    analyzer='word',
+    stop_words=stopwords.words('english'),
+    ngram_range=(1, 3)
 )
 
 standardizer = Pipeline(
@@ -102,12 +113,9 @@ standardizer = Pipeline(
     ]
 )
 
-estimator = SGDClassifier(
-    loss='log_loss',
-    penalty='elasticnet',
-    random_state=42
+estimator = ComplementNB(
+    force_alpha=True
 )
-
 estimator = MultiOutputClassifier(
     estimator=estimator,
     n_jobs=4
@@ -121,25 +129,69 @@ model = Pipeline(
 )
 
 params = {
-    'standardizer__vectorizer__ngram_range': [(1, 1), (1, 2), (1, 3)],
-    'standardizer__vectorizer__norm': [None, 'l1', 'l2'],
-    'standardizer__vectorizer__max_features': np.arange(
-        start=750_000,
-        stop=1_000_001,
-        step=250_000
-    ).tolist(),
-    'estimator__estimator__alpha': np.linspace(
-        start=0.1,
-        stop=0.5,
-        num=5
-    ).round(5).tolist(),
-    'estimator__estimator__class_weight': [None, 'balanced'],
-    'estimator__estimator__l1_ratio': np.linspace(
-        start=0.0,
-        stop=0.5,
-        num=6
-    ).round(5).tolist()
+    'standardizer__vectorizer__norm': ['categorical', [None, 'l1', 'l2']],
+    'standardizer__vectorizer__sublinear_tf': ['categorical', [True, False]],
+    'standardizer__vectorizer__max_features': ['int', {'low': 200_000,
+                                                       'high': 1_500_000,
+                                                       'step': 100_000}],
+    'standardizer__vectorizer__min_df': ['int', {'low': 2,
+                                                 'high': 20,
+                                                 'step': 2}],
+    'standardizer__vectorizer__max_df': ['float', {'low': 0.7,
+                                                   'high': 1.0,
+                                                   'step': 0.05}],
+    'estimator__estimator__norm': ['categorical', [True, False]],
+    'estimator__estimator__alpha': ['float', {'low': 0.1,
+                                              'high': 1.0,
+                                              'step': 0.05}]
 }
+
+scoring = make_scorer(
+    score_func=f1_score,
+    average='weighted',
+    zero_division=0.0
+)
+
+student = Student(
+    model=model,
+    name='ComplementNB',
+    params=params,
+    metric=lambda x, y: f1_score(x, y, average='weighted'),
+    scoring=scoring,
+    cv=2
+)
+```
+
+Количество испытаний можно задать с помощью параметра `n_trials`. Обычно хватает 
+200-300 испытаний для нахождения оптимальных гиперпараметров.
+
+```python
+train(
+    students=students,
+    data=data,
+    n_trials=250
+)
+```
+
+Изменить структуру и формат отображения прогресса обучения моделей, можно в 
+файле [verbose.py](../src/utils/ml/verbose.py), путем модификации метода 
+`__call__` класса `Verbose`:
+
+```python
+def __call__(self, study: Study, trial: FrozenTrial):
+    index = trial.number + 1
+    state = trial.state.name
+    complete = (trial
+                .datetime_complete
+                .strftime('%d-%m-%Y %H:%M:%S'))
+    seconds = (trial.datetime_complete - trial.datetime_start).seconds
+    minutes = seconds // 60
+    seconds = seconds % 60
+    value = round(trial.values[0], 4)
+    best = round(study.best_value, 4)
+
+    print(f'{self.name}: [{complete}] - [{minutes:02}:{seconds:02}] - '
+          f'{state}: {index}/{self.trials} - {value:.4f} ({best:.4f}).')
 ```
 
 ## Оценка моделей
@@ -147,18 +199,17 @@ params = {
 После завершения обучения, в каталоге [models](../models) 
 будет создан каталог с названием файла модели, 
 указанного перед началом тренировки. В каталоге будут находиться файлы: 
-- `labels.json` - метки классов, наблюдаемые в данных, 
-во время тренировки модели.
-- файл обученной модели с расширением `*.joblib`, 
-имя которого будет совпадать с названием файла модели, 
-указанного перед началом тренировки.
+- `labels.json` - метки классов, наблюдаемые в данных, во время тренировки 
+модели.
+- файл обученной модели с расширением `*.joblib`, имя которого будет совпадать 
+с названием файла модели, указанного перед началом тренировки.
 
 В каталоге [training](../reports/training) будет создан каталог 
 с названием файла модели, указанного перед началом тренировки. 
 В папке будут находиться: 
-1. Файл `best_params.json` - гиперпараметры модели, 
+1. Файл `params.json` - гиперпараметры модели, 
 при которых предсказательная способность модели была наилучшей.
-2. Файл `cv_results.csv` - результаты кросс-валидации.
+2. Файл `trials.csv` - результаты всех испытаний.
 3. Каталог `images` - графические материалы.
 
 В каталоге `images` будут содержаться следующие файлы:

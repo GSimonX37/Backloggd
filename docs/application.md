@@ -93,12 +93,12 @@ FROM python:3.10
 COPY ./requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir --upgrade -r ./requirements.txt
 
-COPY ./models/sgd ./models/sgd
+COPY ./models/complement ./models/complement
 COPY ./src/app ./app
 COPY ./src/run.py .
-COPY ./src/utils/ml/preprocessing.py ./utils/ml/preprocessing.py
+COPY ./src/utils/data ./utils/data
 
-CMD ["python", "run.py", "sgd"]
+CMD ["python", "run.py", "complement"]
 ```
 
 Чтобы создать образ, необходимо выполнить следующую команду:
