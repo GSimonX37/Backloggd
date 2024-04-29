@@ -1,5 +1,3 @@
-import nltk
-
 from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import SGDClassifier
@@ -10,8 +8,6 @@ from sklearn.pipeline import Pipeline
 
 from .student import Student
 
-
-title = 'SGDClassifier'
 
 vectorizer = TfidfVectorizer(
     analyzer='word',
@@ -28,7 +24,7 @@ standardizer = Pipeline(
 estimator = SGDClassifier(
     loss='log_loss',
     penalty='elasticnet',
-    max_iter=3000,
+    max_iter=5_000,
     random_state=42
 )
 
@@ -56,11 +52,11 @@ params = {
     'standardizer__vectorizer__max_df': ['float', {'low': 0.7,
                                                    'high': 1.0,
                                                    'step': 0.05}],
-    'estimator__estimator__alpha': ['float', {'low': 0.0,
+    'estimator__estimator__alpha': ['float', {'low': 0.1,
                                               'high': 1.0,
                                               'step': 0.05}],
     'estimator__estimator__class_weight': ['categorical', [None, 'balanced']],
-    'estimator__estimator__l1_ratio': ['float', {'low': 1.0,
+    'estimator__estimator__l1_ratio': ['float', {'low': 0.1,
                                                  'high': 1.0,
                                                  'step': 0.05}]
 }
