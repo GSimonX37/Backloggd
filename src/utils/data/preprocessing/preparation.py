@@ -33,16 +33,15 @@ def prepare(games, genres) -> pd.DataFrame:
     games = games.drop_duplicates()
     genres = genres.drop_duplicates()
 
-    # Удаление значения "indie" из поля "genres"
+    # Удаление значения "indie" из поля "genres".
     genres = genres[genres['genre'] != 'Indie']
 
-    # Объединение данных.
+    # Добавление целевой переменной.
     values = genres['genre'].value_counts().index[:20]
     genres = (genres
               .loc[genres['genre'].isin(values), :]
               .set_index('id'))['genre']
 
-    # Добавление целевой переменной
     games.insert(
         loc=games.shape[1],
         column='genres',
@@ -52,9 +51,8 @@ def prepare(games, genres) -> pd.DataFrame:
     # Отбор необходимых данных.
     data = games[['description', 'genres']]
 
-    # Удаление данных без целевой переменной.
+    # Удаление пропусков.
     data = data.loc[data['genres'].map(bool), :]
-
     data = data.dropna()
 
     return data

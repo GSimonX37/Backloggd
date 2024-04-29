@@ -21,7 +21,7 @@ class Student(object):
 
         """
         :param model: pipeline модели;
-        :param model: название модели;
+        :param name: название модели;
         :param params: пространство гиперпараметров;
         :param metric: функция оценки модели на тестовой выборке;
         :param scoring: функция оценки модели во время кросс валидации;

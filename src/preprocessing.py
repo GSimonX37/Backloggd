@@ -4,8 +4,8 @@ import pandas as pd
 
 from config.paths import PATH_PREPROCESSED_DATA
 from config.paths import PATH_RAW_DATA
-from utils.data import preprocess
 from utils.data import prepare
+from utils.data import preprocess
 from utils.explorer import explorer
 
 

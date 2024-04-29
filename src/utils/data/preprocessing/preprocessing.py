@@ -1,9 +1,9 @@
 import pandas as pd
 
-from .lemmatization import lemmatize
 from .cleaning import length
 from .cleaning import letters
 from .cleaning import spaces
+from .lemmatization import lemmatize
 
 
 def preprocess(data: pd.Series) -> pd.Series:

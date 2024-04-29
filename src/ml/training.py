@@ -25,7 +25,7 @@ from config.ml import RANDOM_STATE
 from config.ml import TEST_SIZE
 from config.paths import PATH_TRAIN_REPORT
 from config.paths import PATH_TRAINED_MODELS
-from ml.models.student import Student
+from ml.students.student import Student
 from utils import plot
 from utils.ml.verbose import Verbose
 
