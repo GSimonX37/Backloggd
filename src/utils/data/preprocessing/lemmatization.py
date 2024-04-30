@@ -9,9 +9,17 @@ lemmatizer = WordNetLemmatizer()
 
 
 @cache
-def get_tag(word):
+def get_tag(word) -> str:
+    """
+    Присваивает токен части речи слову;
+
+    :param word: слово;
+    :return: токен части речи слова.
+    """
+
     tag = pos_tag([word])[0][1][0].upper()
-    tag_dict = {"J": wordnet.ADJ,
+    tag_dict = {"A": wordnet.ADJ,
+                "S": wordnet.ADJ_SAT,
                 "N": wordnet.NOUN,
                 "V": wordnet.VERB,
                 "R": wordnet.ADV}
@@ -21,12 +29,20 @@ def get_tag(word):
 
 @cache
 def lemma(word: str, tag) -> str:
+    """
+    Производит лемматизацию слова;
+
+    :param word: слово;
+    :param tag: токен части речи слова;
+    :return: слово.
+    """
+
     return lemmatizer.lemmatize(word, tag)
 
 
 def lemmatize(text: str) -> str:
     """
-    Производить лемматизацию строки;
+    Производит лемматизацию строки;
 
     :param text: строка;
     :return: строка.

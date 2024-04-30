@@ -60,7 +60,7 @@ scoring = make_scorer(
     zero_division=0.0
 )
 
-pipeline = Model(
+model = Model(
     pipeline=pipeline,
     name='MultinomialNB',
     params=params,

@@ -7,6 +7,13 @@ from .lemmatization import lemmatize
 
 
 def preprocess(data: pd.Series) -> pd.Series:
+    """
+    Производит предварительную обработку текста;
+
+    :param data: набор данных;
+    :return: предварительно обработанный набор данных.
+    """
+
     # Очистка текста
     data = data.apply(letters)
     data = data.apply(length, size=2)

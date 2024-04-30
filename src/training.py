@@ -40,7 +40,7 @@ def main():
                     name=f'ml.models.{name}',
                     globals=globals(),
                     locals=locals(),
-                    fromlist=['student'],
+                    fromlist=['model'],
                     level=0
                 )
 

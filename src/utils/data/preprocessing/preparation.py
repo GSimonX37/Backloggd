@@ -19,11 +19,11 @@ def insert(key: int, values: pd.Series) -> list:
 
 def prepare(games, genres) -> pd.DataFrame:
     """
-    Подготавливает данные для предварительно обработки;
+    Подготавливает данные для предварительной обработки;
 
-    :param games:
-    :param genres:
-    :return:
+    :param games: данные о видеоиграх;
+    :param genres: данные о жанрах видеоигр;
+    :return: подготовленный набор данных.
     """
 
     games = games.copy()

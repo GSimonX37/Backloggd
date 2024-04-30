@@ -70,10 +70,7 @@ def train(models: dict[str: Model],
     )
 
     for name, model in models.items():
-        params = 1
-        for param in model.params.values():
-            params *= len(param[1])
-        print(f'{model.name}: {n_trials}/{params} ({n_trials / params:.2%}).')
+        print(f'{model.name}: {n_trials}.')
 
         model.x, model.y = x_train, y_train
 

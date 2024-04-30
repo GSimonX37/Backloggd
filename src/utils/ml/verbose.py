@@ -3,11 +3,28 @@ from optuna.trial import FrozenTrial
 
 
 class Verbose(object):
+    """
+    Класс для отображения прогресса подбора гиперпараметров с помощью Optuna.
+    """
+
     def __init__(self, trials: int, name: str):
+        """
+        :param trials: общее количество испытаний;
+        :param name: название модели;
+        """
+
         self.trials = trials
         self.name = name
 
-    def __call__(self, study: Study, trial: FrozenTrial):
+    def __call__(self, study: Study, trial: FrozenTrial) -> None:
+        """
+        Вызывается после каждого испытания;
+
+        :param study: задача оптимизации - совокупность испытаний;
+        :param trial: крайнее испытание;
+        :return: None.
+        """
+
         index = trial.number + 1
         state = trial.state.name
         complete = (trial
