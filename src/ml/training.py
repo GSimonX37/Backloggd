@@ -166,7 +166,7 @@ def train(models: dict[str: Model],
         (train_sizes,
          train_scores, test_scores,
          fit_times, score_times) = learning_curve(
-            estimator=model,
+            estimator=model.pipeline,
             X=x_train,
             y=y_train,
             train_sizes=LEARNING_CURVE_TRAIN_SIZES,

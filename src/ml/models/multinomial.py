@@ -39,9 +39,9 @@ pipeline = Pipeline(
 params = {
     'standardizer__vectorizer__norm': ['categorical', [None, 'l1', 'l2']],
     'standardizer__vectorizer__sublinear_tf': ['categorical', [True, False]],
-    'standardizer__vectorizer__max_features': ['int', {'low': 200_000,
-                                                       'high': 1_500_000,
-                                                       'step': 100_000}],
+    'standardizer__vectorizer__max_features': ['int', {'low': 50_000,
+                                                       'high': 250_000,
+                                                       'step': 50_000}],
     'standardizer__vectorizer__min_df': ['int', {'low': 2,
                                                  'high': 20,
                                                  'step': 2}],

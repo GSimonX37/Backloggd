@@ -49,7 +49,7 @@ def main():
         train(
             models=models,
             data=data,
-            n_trials=250
+            n_trials=300
         )
 
 
