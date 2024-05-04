@@ -3,14 +3,17 @@ import csv
 import json
 import os
 
+from multiprocessing import Pool
+from random import randint
+
 import joblib
-import nltk
 import optuna
 import optuna.logging
 import pandas as pd
 
 from nltk.corpus import stopwords
 from optuna.samplers import TPESampler
+from optuna.study import Study
 from sklearn.dummy import DummyClassifier
 from sklearn.model_selection import ShuffleSplit
 from sklearn.model_selection import learning_curve
@@ -31,7 +34,31 @@ from utils.ml.verbose import Verbose
 
 
 optuna.logging.set_verbosity(optuna.logging.WARNING)
-nltk.download('stopwords')
+
+
+def optimize(n_trials: int, model, verbose: Verbose, seed: int) -> Study:
+    """
+    Запускает исследование в отдельном процессе;
+
+    :param n_trials: количество испытаний для одного исследования;
+    :param model: модель;
+    :param verbose: класс для отображения прогресса подбора гиперпараметров;
+    :param seed: инициализатор TPESampler;
+    :return: результаты исследования.
+    """
+
+    study = optuna.create_study(
+        direction='maximize',
+        sampler=TPESampler(seed=seed)
+    )
+
+    study.optimize(
+        model,
+        n_trials=n_trials,
+        callbacks=[verbose]
+    )
+
+    return study
 
 
 def train(models: dict[str: Model],
@@ -43,7 +70,7 @@ def train(models: dict[str: Model],
 
     :param models: словарь моделей;
     :param data: набор данных;
-    :param n_trials: количество испытаний;
+    :param n_trials: количество испытаний для каждого исследования;
     :param n_jobs: количество ядер процессора,
     задействованных в подборе гипперпараметров;
     :return: None.
@@ -70,23 +97,20 @@ def train(models: dict[str: Model],
     )
 
     for name, model in models.items():
-        print(f'{model.name}: {n_trials}.')
+        print(f'{model.name}: {n_jobs*n_trials} [{n_jobs} X {n_trials}].')
 
         model.x, model.y = x_train, y_train
 
-        study = optuna.create_study(
-            direction='maximize',
-            sampler=TPESampler()
-        )
+        args = []
+        for i in range(n_jobs):
+            verbose = Verbose(n_trials, model.name, i + 1)
+            seed = randint(1, 10_000)
+            args += [[n_trials, model, verbose, seed]]
 
-        verbose = Verbose(n_trials, model.name)
+        with Pool(n_jobs) as pool:
+            studies: list[Study] = pool.starmap(optimize, args)
 
-        study.optimize(
-            model,
-            n_trials=n_trials,
-            n_jobs=n_jobs,
-            callbacks=[verbose]
-        )
+        best_study = max(studies, key=lambda s: s.best_value)
 
         path = fr'{PATH_TRAIN_REPORT}\{name}'
         if not os.path.exists(path):
@@ -117,41 +141,44 @@ def train(models: dict[str: Model],
         # Сохранение лучших гиперпараметров.
         with open(rf'{path}\params.json', 'w') as f:
             f.write(json.dumps(
-                obj=study.best_params,
+                obj=best_study.best_params,
                 sort_keys=True,
                 indent=4)
             )
 
         # Сохранение результатов всех испытаний.
         trials = [[
+            'job',
             'index',
             'state',
             'start',
             'complete'
         ]]
-        trials += [model.params.keys()] + ['values']
-        for trial in study.trials:
-            index = trial.number + 1
-            state = trial.state.name
-            start = (trial
-                     .datetime_start
-                     .strftime('%d-%m-%Y %H:%M:%S'))
-            complete = (trial
-                        .datetime_complete
-                        .strftime('%d-%m-%Y %H:%M:%S'))
-            params = trial.params.values()
-            params = [round(p, 4) if isinstance(p, (int, float)) else p
-                      for p in params]
-            value = round(trial.values[0], 4)
+        trials[0] += [*model.params.keys()] + ['values']
+        for job, study in enumerate(studies, start=1):
+            for trial in study.trials:
+                index = trial.number + 1
+                state = trial.state.name
+                start = (trial
+                         .datetime_start
+                         .strftime('%d-%m-%Y %H:%M:%S'))
+                complete = (trial
+                            .datetime_complete
+                            .strftime('%d-%m-%Y %H:%M:%S'))
+                params = trial.params.values()
+                params = [round(p, 4) if isinstance(p, (int, float)) else p
+                          for p in params]
+                value = round(trial.values[0], 4)
 
-            trials.append([
-                index,
-                state,
-                start,
-                complete
-            ])
+                trials.append([
+                    job,
+                    index,
+                    state,
+                    start,
+                    complete
+                ])
 
-            trials[-1] += [*params] + [value]
+                trials[-1] += [*params] + [value]
 
         with open(fr'{path}\trials.csv', 'w',
                   newline='',
@@ -159,7 +186,7 @@ def train(models: dict[str: Model],
             writer = csv.writer(f, delimiter=',')
             writer.writerows(trials)
 
-        pipeline = model.pipeline.set_params(**study.best_params)
+        pipeline = model.pipeline.set_params(**best_study.best_params)
         pipeline.fit(x_train, y_train)
 
         # Оценка масштабируемости.
