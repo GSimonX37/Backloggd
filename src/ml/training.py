@@ -31,18 +31,23 @@ from config.paths import PATH_TRAINED_MODELS
 from ml.models.model import Model
 from utils import plot
 from utils.ml.verbose import Verbose
-
+from utils.ml.report import Report
 
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 
 
-def optimize(n_trials: int, model, verbose: Verbose, seed: int) -> Study:
+def optimize(n_trials: int,
+             model,
+             verbose: Verbose,
+             report: Report,
+             seed: int) -> tuple[Study, Report]:
     """
     Запускает исследование в отдельном процессе;
 
     :param n_trials: количество испытаний для одного исследования;
     :param model: модель;
     :param verbose: класс для отображения прогресса подбора гиперпараметров;
+    :param report: класс для систематизации результатов исследования;
     :param seed: инициализатор TPESampler;
     :return: результаты исследования.
     """
@@ -55,10 +60,10 @@ def optimize(n_trials: int, model, verbose: Verbose, seed: int) -> Study:
     study.optimize(
         model,
         n_trials=n_trials,
-        callbacks=[verbose]
+        callbacks=[verbose, report]
     )
 
-    return study
+    return study, report
 
 
 def train(models: dict[str: Model],
@@ -104,13 +109,14 @@ def train(models: dict[str: Model],
         args = []
         for i in range(n_jobs):
             verbose = Verbose(n_trials, model.name, i + 1)
+            report = Report(i + 1)
             seed = randint(1, 10_000)
-            args += [[n_trials, model, verbose, seed]]
+            args += [[n_trials, model, verbose, report, seed]]
 
         with Pool(n_jobs) as pool:
-            studies: list[Study] = pool.starmap(optimize, args)
+            studies: list[Study, Report] = pool.starmap(optimize, args)
 
-        best_study = max(studies, key=lambda s: s.best_value)
+        best_study = max(studies, key=lambda s: s[0].best_value)[0]
 
         path = fr'{PATH_TRAIN_REPORT}\{name}'
         if not os.path.exists(path):
@@ -154,31 +160,10 @@ def train(models: dict[str: Model],
             'start',
             'complete'
         ]]
-        trials[0] += [*model.params.keys()] + ['values']
-        for job, study in enumerate(studies, start=1):
-            for trial in study.trials:
-                index = trial.number + 1
-                state = trial.state.name
-                start = (trial
-                         .datetime_start
-                         .strftime('%d-%m-%Y %H:%M:%S'))
-                complete = (trial
-                            .datetime_complete
-                            .strftime('%d-%m-%Y %H:%M:%S'))
-                params = trial.params.values()
-                params = [round(p, 4) if isinstance(p, (int, float)) else p
-                          for p in params]
-                value = round(trial.values[0], 4)
+        trials[-1] += [*model.params.keys()] + ['values', 'best']
 
-                trials.append([
-                    job,
-                    index,
-                    state,
-                    start,
-                    complete
-                ])
-
-                trials[-1] += [*params] + [value]
+        for study in studies:
+            trials += study[1].data
 
         with open(fr'{path}\trials.csv', 'w',
                   newline='',
