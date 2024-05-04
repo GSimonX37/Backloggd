@@ -9,6 +9,14 @@ from sklearn.pipeline import Pipeline
 from .model import Model
 
 
+def metric(y_true, y_predict) -> float:
+    return f1_score(
+        y_true=y_true,
+        y_pred=y_predict,
+        average='weighted'
+    )
+
+
 vectorizer = TfidfVectorizer(
     analyzer='word',
     stop_words=stopwords.words('english'),
@@ -29,8 +37,7 @@ estimator = SGDClassifier(
 )
 
 estimator = MultiOutputClassifier(
-    estimator=estimator,
-    n_jobs=4
+    estimator=estimator
 )
 
 pipeline = Pipeline(
@@ -71,7 +78,7 @@ model = Model(
     pipeline=pipeline,
     name='SGDClassifier',
     params=params,
-    metric=lambda x, y: f1_score(x, y, average='weighted'),
+    metric=metric,
     scoring=scoring,
     cv=2
 )

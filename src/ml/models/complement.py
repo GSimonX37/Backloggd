@@ -9,6 +9,14 @@ from sklearn.pipeline import Pipeline
 from .model import Model
 
 
+def metric(y_true, y_predict) -> float:
+    return f1_score(
+        y_true=y_true,
+        y_pred=y_predict,
+        average='weighted'
+    )
+
+
 vectorizer = TfidfVectorizer(
     analyzer='word',
     stop_words=stopwords.words('english'),
@@ -25,8 +33,7 @@ estimator = ComplementNB(
     force_alpha=True
 )
 estimator = MultiOutputClassifier(
-    estimator=estimator,
-    n_jobs=4
+    estimator=estimator
 )
 
 pipeline = Pipeline(
@@ -40,7 +47,7 @@ params = {
     'standardizer__vectorizer__norm': ['categorical', [None, 'l1', 'l2']],
     'standardizer__vectorizer__sublinear_tf': ['categorical', [True, False]],
     'standardizer__vectorizer__max_features': ['int', {'low': 50_000,
-                                                       'high': 250_000,
+                                                       'high': 300_000,
                                                        'step': 50_000}],
     'standardizer__vectorizer__min_df': ['int', {'low': 2,
                                                  'high': 20,
@@ -64,7 +71,7 @@ model = Model(
     pipeline=pipeline,
     name='ComplementNB',
     params=params,
-    metric=lambda x, y: f1_score(x, y, average='weighted'),
+    metric=metric,
     scoring=scoring,
     cv=2
 )
