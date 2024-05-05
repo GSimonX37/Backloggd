@@ -4,3 +4,4 @@ from .metrics import metrics
 from .scalability import scalability
 from .step import step
 from .words import words
+from .studies import studies

@@ -33,6 +33,7 @@ from utils import plot
 from utils.ml.verbose import Verbose
 from utils.ml.report import Report
 
+
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 
 
@@ -170,6 +171,12 @@ def train(models: dict[str: Model],
                   encoding='utf-8') as f:
             writer = csv.writer(f, delimiter=',')
             writer.writerows(trials)
+
+        plot.studies(
+            trials=pd.DataFrame(trials[1:], columns=trials[0]),
+            title=model.name,
+            path=fr'{path}\images'
+        )
 
         pipeline = model.pipeline.set_params(**best_study.best_params)
         pipeline.fit(x_train, y_train)
