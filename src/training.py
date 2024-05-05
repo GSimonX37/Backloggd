@@ -49,7 +49,8 @@ def main():
         train(
             models=models,
             data=data,
-            n_trials=300
+            n_trials=300,
+            n_jobs=4
         )
 
 
