@@ -55,7 +55,8 @@ def main():
         train(
             models=models,
             data=data,
-            n_trials=250
+            n_trials=300,
+            n_jobs=4
         )
 
 
@@ -210,7 +211,8 @@ def __call__(self, study: Study, trial: FrozenTrial):
 - `metrics.png` - предсказательная способность модели;
 - `scalability.png` - масштабируемость модели;
 - `calibration.png` - калиброванность модели;
-- `dummy.png` - предсказательная способность простой эмпирической модели.
+- `dummy.png` - предсказательная способность простой эмпирической модели;
+- `studies.png` - исследование пространства гиперпараметров.
 
 Примеры графических материалов, сформированных по результатам тренировки модели:
 
@@ -225,5 +227,7 @@ def __call__(self, study: Study, trial: FrozenTrial):
 ![calibration](../resources/training/calibration.png)
 
 ![dummy](../resources/training/dummy.png)
+
+![studies](../resources/training/studies.png)
 
 [К описанию проекта](../README.md)
