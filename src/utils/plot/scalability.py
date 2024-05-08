@@ -302,3 +302,5 @@ def scalability(train_sizes: pd.Series,
             bbox_inches='tight',
             dpi=150
         )
+
+    plt.close(figure)

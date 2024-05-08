@@ -152,3 +152,5 @@ def studies(trials: pd.DataFrame,
             bbox_inches='tight',
             dpi=150
         )
+
+    plt.close(figure)
